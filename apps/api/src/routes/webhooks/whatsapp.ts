@@ -12,37 +12,20 @@ import type { ChannelType } from "@tercela/shared";
 const whatsappWebhook = new OpenAPIHono();
 
 // Webhook verification (GET)
-whatsappWebhook.openapi(
-  createRoute({
-    method: "get",
-    path: "/",
-    tags: ["Webhooks"],
-    summary: "WhatsApp webhook verification",
-    description: "Verification endpoint used by Meta to validate the webhook",
-    request: {
-      query: z.object({
-        "hub.mode": z.string().openapi({ example: "subscribe" }),
-        "hub.verify_token": z.string().openapi({ example: "tercela-verify-token" }),
-        "hub.challenge": z.string().openapi({ example: "challenge_string" }),
-      }),
-    },
-    responses: {
-      200: { description: "Challenge returned successfully" },
-      403: { description: "Invalid token" },
-    },
-  }),
-  (c) => {
-    const mode = c.req.valid("query")["hub.mode"];
-    const token = c.req.valid("query")["hub.verify_token"];
-    const challenge = c.req.valid("query")["hub.challenge"];
+// Uses raw query params because Meta sends dot-notation keys (hub.mode)
+// which Hono/Zod interprets as nested objects, breaking validation.
+whatsappWebhook.get("/", (c) => {
+  const url = new URL(c.req.url);
+  const mode = url.searchParams.get("hub.mode");
+  const token = url.searchParams.get("hub.verify_token");
+  const challenge = url.searchParams.get("hub.challenge");
 
-    if (mode === "subscribe" && token === env.WHATSAPP_VERIFY_TOKEN) {
-      return c.text(challenge, 200);
-    }
+  if (mode === "subscribe" && token === env.WHATSAPP_VERIFY_TOKEN) {
+    return c.text(challenge ?? "", 200);
+  }
 
-    return c.text("Forbidden", 403);
-  },
-);
+  return c.text("Forbidden", 403);
+});
 
 // Incoming messages (POST)
 whatsappWebhook.openapi(
