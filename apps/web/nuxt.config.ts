@@ -18,7 +18,7 @@ export default defineNuxtConfig({
     head: {
       title: "Tercela",
       meta: [
-        { name: "description", content: "Plataforma omnichannel de atendimento" },
+        { name: "description", content: "Open-source omnichannel platform for customer communication" },
       ],
     },
   },
