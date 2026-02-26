@@ -9,6 +9,7 @@
             color="primary"
             to="/channels/new"
           />
+          <GlobalControls />
         </template>
       </UDashboardNavbar>
     </template>

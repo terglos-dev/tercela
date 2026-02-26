@@ -3,7 +3,7 @@
     <template #header>
       <UDashboardNavbar :title="$t('conversations.title')" icon="i-lucide-message-square">
         <template #right>
-          <UColorModeButton />
+          <GlobalControls />
         </template>
       </UDashboardNavbar>
     </template>

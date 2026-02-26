@@ -10,7 +10,7 @@
             class="w-32"
             @update:model-value="handleStatusChange"
           />
-          <UColorModeButton />
+          <GlobalControls />
         </template>
       </UDashboardNavbar>
     </template>

@@ -10,6 +10,9 @@
             to="/channels"
           />
         </template>
+        <template #right>
+          <GlobalControls />
+        </template>
       </UDashboardNavbar>
     </template>
 

@@ -3,7 +3,7 @@
     <template #header>
       <UDashboardNavbar :title="$t('contacts.title')" icon="i-lucide-users">
         <template #right>
-          <UColorModeButton />
+          <GlobalControls />
         </template>
       </UDashboardNavbar>
     </template>

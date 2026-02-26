@@ -3,7 +3,7 @@
     <template #header>
       <UDashboardNavbar :title="$t('settings.title')" icon="i-lucide-settings">
         <template #right>
-          <UColorModeButton />
+          <GlobalControls />
         </template>
       </UDashboardNavbar>
     </template>
