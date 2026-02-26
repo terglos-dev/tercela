@@ -1,0 +1,16 @@
+{
+  "name": "tercela",
+  "private": true,
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "dev:api": "bun --env-file=.env --watch apps/api/src/index.ts",
+    "dev:web": "bun run --filter @tercela/web dev",
+    "dev": "bun run dev:api & bun run dev:web",
+    "db:generate": "bun run --filter @tercela/api db:generate",
+    "db:push": "bun run --filter @tercela/api db:push",
+    "db:seed": "bun run --filter @tercela/api db:seed",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:build": "docker compose build"
+  }
+}

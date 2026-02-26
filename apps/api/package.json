@@ -1,0 +1,27 @@
+{
+  "name": "@tercela/api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --env-file=../../.env --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:seed": "bun run src/db/seed.ts"
+  },
+  "dependencies": {
+    "@hono/zod-openapi": "^1.2.2",
+    "@scalar/hono-api-reference": "^0.9.45",
+    "@tercela/shared": "workspace:*",
+    "drizzle-orm": "^0.45.1",
+    "hono": "^4.7.0",
+    "postgres": "^3.4.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "drizzle-kit": "^0.31.9",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+.nuxt/
+.output/
+.nitro/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Claude Code
+.claude/
+
+# Bun
+bun.lock
+
+# Drizzle
+drizzle/meta/
+
+# Misc
+*.tgz
+*.tsbuildinfo
+.cache/
