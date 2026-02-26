@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel>
     <template #header>
-      <UDashboardNavbar title="Settings" icon="i-lucide-settings">
+      <UDashboardNavbar :title="$t('settings.title')" icon="i-lucide-settings">
         <template #right>
           <UColorModeButton />
         </template>
@@ -15,7 +15,7 @@
           <template #header>
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-users" class="size-5" />
-              <h3 class="font-semibold">Agents</h3>
+              <h3 class="font-semibold">{{ $t("settings.agents") }}</h3>
             </div>
           </template>
 
@@ -42,25 +42,25 @@
           <template #header>
             <div class="flex items-center gap-2">
               <UIcon name="i-lucide-user-plus" class="size-5" />
-              <h3 class="font-semibold">New Agent</h3>
+              <h3 class="font-semibold">{{ $t("settings.newAgent") }}</h3>
             </div>
           </template>
 
           <UForm :state="newUser" class="grid grid-cols-2 gap-4" @submit="handleCreateUser">
-            <UFormField label="Name" name="name">
-              <UInput v-model="newUser.name" placeholder="Full name" icon="i-lucide-user" class="w-full" />
+            <UFormField :label="$t('settings.name')" name="name">
+              <UInput v-model="newUser.name" :placeholder="$t('settings.namePlaceholder')" icon="i-lucide-user" class="w-full" />
             </UFormField>
-            <UFormField label="Email" name="email">
-              <UInput v-model="newUser.email" type="email" placeholder="email@empresa.com" icon="i-lucide-mail" class="w-full" />
+            <UFormField :label="$t('settings.email')" name="email">
+              <UInput v-model="newUser.email" type="email" :placeholder="$t('settings.emailPlaceholder')" icon="i-lucide-mail" class="w-full" />
             </UFormField>
-            <UFormField label="Password" name="password">
-              <UInput v-model="newUser.password" type="password" placeholder="Minimum 6 characters" icon="i-lucide-lock" class="w-full" />
+            <UFormField :label="$t('settings.password')" name="password">
+              <UInput v-model="newUser.password" type="password" :placeholder="$t('settings.passwordPlaceholder')" icon="i-lucide-lock" class="w-full" />
             </UFormField>
-            <UFormField label="Role" name="role">
+            <UFormField :label="$t('settings.role')" name="role">
               <USelect v-model="newUser.role" :items="['agent', 'admin']" class="w-full" />
             </UFormField>
             <div class="col-span-2">
-              <UButton type="submit" icon="i-lucide-plus" label="Create agent" />
+              <UButton type="submit" icon="i-lucide-plus" :label="$t('settings.createAgent')" />
             </div>
           </UForm>
         </UCard>
@@ -71,22 +71,24 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
+import type { UserListItem } from "~/types/api";
 
+const { t } = useI18n();
 const api = useApi();
 const toast = useToast();
-const usersList = ref<any[]>([]);
+const usersList = ref<UserListItem[]>([]);
 const usersLoading = ref(true);
 const newUser = reactive({ name: "", email: "", password: "", role: "agent" });
 
-const userColumns: TableColumn<any>[] = [
-  { accessorKey: "name", header: "Name" },
-  { accessorKey: "email", header: "Email" },
-  { accessorKey: "role", header: "Role" },
-];
+const userColumns = computed<TableColumn<UserListItem>[]>(() => [
+  { accessorKey: "name", header: t("settings.name") },
+  { accessorKey: "email", header: t("settings.email") },
+  { accessorKey: "role", header: t("settings.role") },
+]);
 
 onMounted(async () => {
   try {
-    usersList.value = await api.get<any[]>("/api/users");
+    usersList.value = await api.get<UserListItem[]>("/v1/users");
   } finally {
     usersLoading.value = false;
   }
@@ -94,12 +96,13 @@ onMounted(async () => {
 
 async function handleCreateUser() {
   try {
-    const user = await api.post<any>("/api/users", { ...newUser });
+    const user = await api.post<UserListItem>("/v1/users", { ...newUser });
     usersList.value.push(user);
     Object.assign(newUser, { name: "", email: "", password: "", role: "agent" });
-    toast.add({ title: "Agent created", icon: "i-lucide-check", color: "success" });
-  } catch (e: any) {
-    toast.add({ title: "Failed to create agent", description: e.message, icon: "i-lucide-alert-circle", color: "error" });
+    toast.add({ title: t("settings.agentCreated"), icon: "i-lucide-check", color: "success" });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    toast.add({ title: t("settings.createFailed"), description: message, icon: "i-lucide-alert-circle", color: "error" });
   }
 }
 </script>

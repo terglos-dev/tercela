@@ -3,6 +3,8 @@ import { eq } from "drizzle-orm";
 import { db } from "../db";
 import { users } from "../db/schema";
 import { createUser } from "../services/auth";
+import { success, error } from "../utils/response";
+import { wrapSuccess, ErrorResponseSchema } from "../utils/openapi-schemas";
 
 const usersRouter = new OpenAPIHono();
 
@@ -18,7 +20,7 @@ const UserSchema = z.object({
   createdAt: z.string(),
 });
 
-const ErrorSchema = z.object({ error: z.string() });
+type UserResponse = z.infer<typeof UserSchema>;
 
 // GET /
 usersRouter.openapi(
@@ -30,7 +32,7 @@ usersRouter.openapi(
     responses: {
       200: {
         description: "List of users",
-        content: { "application/json": { schema: z.array(UserSchema) } },
+        content: { "application/json": { schema: wrapSuccess(z.array(UserSchema)) } },
       },
     },
   }),
@@ -39,7 +41,7 @@ usersRouter.openapi(
       .select({ id: users.id, name: users.name, email: users.email, role: users.role, createdAt: users.createdAt })
       .from(users)
       .orderBy(users.createdAt);
-    return c.json(result as any, 200);
+    return success(c, result as unknown as UserResponse[], 200);
   },
 );
 
@@ -54,11 +56,11 @@ usersRouter.openapi(
     responses: {
       200: {
         description: "User found",
-        content: { "application/json": { schema: UserSchema } },
+        content: { "application/json": { schema: wrapSuccess(UserSchema) } },
       },
       404: {
         description: "User not found",
-        content: { "application/json": { schema: ErrorSchema } },
+        content: { "application/json": { schema: ErrorResponseSchema } },
       },
     },
   }),
@@ -69,8 +71,8 @@ usersRouter.openapi(
       .from(users)
       .where(eq(users.id, id))
       .limit(1);
-    if (!user) return c.json({ error: "User not found" }, 404);
-    return c.json(user as any, 200);
+    if (!user) return error(c, "User not found", 404);
+    return success(c, user as unknown as UserResponse, 200);
   },
 );
 
@@ -94,18 +96,18 @@ usersRouter.openapi(
     responses: {
       201: {
         description: "User created",
-        content: { "application/json": { schema: UserSchema } },
+        content: { "application/json": { schema: wrapSuccess(UserSchema) } },
       },
       400: {
         description: "Invalid input",
-        content: { "application/json": { schema: ErrorSchema } },
+        content: { "application/json": { schema: ErrorResponseSchema } },
       },
     },
   }),
   async (c) => {
     const data = c.req.valid("json");
     const user = await createUser(data);
-    return c.json({ id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt } as any, 201);
+    return success(c, { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt } as unknown as UserResponse, 201);
   },
 );
 
@@ -129,11 +131,11 @@ usersRouter.openapi(
     responses: {
       200: {
         description: "User updated",
-        content: { "application/json": { schema: UserSchema } },
+        content: { "application/json": { schema: wrapSuccess(UserSchema) } },
       },
       404: {
         description: "User not found",
-        content: { "application/json": { schema: ErrorSchema } },
+        content: { "application/json": { schema: ErrorResponseSchema } },
       },
     },
   }),
@@ -145,8 +147,8 @@ usersRouter.openapi(
       .set({ ...data, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
-    if (!user) return c.json({ error: "User not found" }, 404);
-    return c.json({ id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt } as any, 200);
+    if (!user) return error(c, "User not found", 404);
+    return success(c, { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt } as unknown as UserResponse, 200);
   },
 );
 

@@ -1,5 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { listConversations, getConversation, updateConversation } from "../services/conversation";
+import { success, error } from "../utils/response";
+import { wrapSuccess, ErrorResponseSchema } from "../utils/openapi-schemas";
 
 const conversationsRouter = new OpenAPIHono();
 
@@ -30,7 +32,7 @@ const ConversationSchema = z.object({
     .nullable(),
 });
 
-const ErrorSchema = z.object({ error: z.string() });
+type ConversationResponse = z.infer<typeof ConversationSchema>;
 
 // GET /
 conversationsRouter.openapi(
@@ -42,13 +44,13 @@ conversationsRouter.openapi(
     responses: {
       200: {
         description: "List of conversations",
-        content: { "application/json": { schema: z.array(ConversationSchema) } },
+        content: { "application/json": { schema: wrapSuccess(z.array(ConversationSchema)) } },
       },
     },
   }),
   async (c) => {
     const result = await listConversations();
-    return c.json(result as any, 200);
+    return success(c, result as unknown as ConversationResponse[], 200);
   },
 );
 
@@ -63,19 +65,19 @@ conversationsRouter.openapi(
     responses: {
       200: {
         description: "Conversation found",
-        content: { "application/json": { schema: ConversationSchema } },
+        content: { "application/json": { schema: wrapSuccess(ConversationSchema) } },
       },
       404: {
         description: "Conversation not found",
-        content: { "application/json": { schema: ErrorSchema } },
+        content: { "application/json": { schema: ErrorResponseSchema } },
       },
     },
   }),
   async (c) => {
     const { id } = c.req.valid("param");
     const conv = await getConversation(id);
-    if (!conv) return c.json({ error: "Conversation not found" }, 404);
-    return c.json(conv as any, 200);
+    if (!conv) return error(c, "Conversation not found", 404);
+    return success(c, conv as unknown as ConversationResponse, 200);
   },
 );
 
@@ -99,11 +101,11 @@ conversationsRouter.openapi(
     responses: {
       200: {
         description: "Conversation updated",
-        content: { "application/json": { schema: ConversationSchema } },
+        content: { "application/json": { schema: wrapSuccess(ConversationSchema) } },
       },
       404: {
         description: "Conversation not found",
-        content: { "application/json": { schema: ErrorSchema } },
+        content: { "application/json": { schema: ErrorResponseSchema } },
       },
     },
   }),
@@ -111,8 +113,8 @@ conversationsRouter.openapi(
     const { id } = c.req.valid("param");
     const data = c.req.valid("json");
     const conv = await updateConversation(id, data);
-    if (!conv) return c.json({ error: "Conversation not found" }, 404);
-    return c.json(conv as any, 200);
+    if (!conv) return error(c, "Conversation not found", 404);
+    return success(c, conv as unknown as ConversationResponse, 200);
   },
 );
 

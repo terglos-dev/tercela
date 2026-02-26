@@ -17,12 +17,33 @@ export function useApi() {
       headers,
     });
 
+    const body = await res.json().catch(() => null);
+
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(error.error || "Request failed");
+      throw new Error(body?.error?.message || "Request failed");
     }
 
-    return res.json();
+    return body.data as T;
+  }
+
+  async function getPaginated<T>(path: string): Promise<{ data: T[]; meta: { nextCursor: string | null; hasMore: boolean } }> {
+    const config = useRuntimeConfig();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (token.value) {
+      headers.Authorization = `Bearer ${token.value}`;
+    }
+
+    const res = await fetch(`${config.public.apiBase}${path}`, { headers });
+    const body = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(body?.error?.message || "Request failed");
+    }
+
+    return { data: body.data as T[], meta: body.meta };
   }
 
   return {
@@ -31,5 +52,6 @@ export function useApi() {
       apiFetch<T>(path, { method: "POST", body: JSON.stringify(body) }),
     patch: <T>(path: string, body: unknown) =>
       apiFetch<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
+    getPaginated: <T>(path: string) => getPaginated<T>(path),
   };
 }

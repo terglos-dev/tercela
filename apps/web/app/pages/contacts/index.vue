@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel>
     <template #header>
-      <UDashboardNavbar title="Contacts" icon="i-lucide-users">
+      <UDashboardNavbar :title="$t('contacts.title')" icon="i-lucide-users">
         <template #right>
           <UColorModeButton />
         </template>
@@ -17,7 +17,7 @@
             </UBadge>
           </template>
           <template #createdAt-cell="{ row }">
-            {{ new Date(row.original.createdAt).toLocaleDateString("en-US") }}
+            {{ new Date(row.original.createdAt).toLocaleDateString(locale) }}
           </template>
         </UTable>
 
@@ -27,7 +27,7 @@
 
         <div v-else class="flex flex-col items-center justify-center py-20 gap-2 text-[var(--ui-text-muted)]">
           <UIcon name="i-lucide-users" class="size-10" />
-          <span class="text-sm">No contacts found</span>
+          <span class="text-sm">{{ $t("contacts.empty") }}</span>
         </div>
       </div>
     </template>
@@ -36,17 +36,19 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
+import type { Serialized, Contact } from "@tercela/shared";
 
+const { t, locale } = useI18n();
 const api = useApi();
-const contacts = ref<any[]>([]);
+const contacts = ref<Serialized<Contact>[]>([]);
 const loading = ref(true);
 
-const columns: TableColumn<any>[] = [
-  { accessorKey: "name", header: "Name" },
-  { accessorKey: "phone", header: "Phone" },
-  { accessorKey: "channelType", header: "Channel" },
-  { accessorKey: "createdAt", header: "Created at" },
-];
+const columns = computed<TableColumn<Serialized<Contact>>[]>(() => [
+  { accessorKey: "name", header: t("contacts.name") },
+  { accessorKey: "phone", header: t("contacts.phone") },
+  { accessorKey: "channelType", header: t("contacts.channel") },
+  { accessorKey: "createdAt", header: t("contacts.createdAt") },
+]);
 
 function channelIcon(type: string) {
   if (type === "whatsapp") return "i-lucide-message-circle";
@@ -56,7 +58,7 @@ function channelIcon(type: string) {
 
 onMounted(async () => {
   try {
-    contacts.value = await api.get<any[]>("/api/contacts");
+    contacts.value = await api.get<Serialized<Contact>[]>("/v1/contacts");
   } finally {
     loading.value = false;
   }

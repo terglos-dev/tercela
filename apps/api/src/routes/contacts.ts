@@ -1,7 +1,12 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import type { Serialized, Contact } from "@tercela/shared";
 import { listContacts, getContact, updateContact } from "../services/contact";
 import { db } from "../db";
 import { contacts } from "../db/schema";
+import { success, error } from "../utils/response";
+import { wrapSuccess, ErrorResponseSchema } from "../utils/openapi-schemas";
+
+type ContactResponse = Serialized<Contact>;
 
 const contactsRouter = new OpenAPIHono();
 
@@ -20,8 +25,6 @@ const ContactSchema = z.object({
   updatedAt: z.string(),
 });
 
-const ErrorSchema = z.object({ error: z.string() });
-
 // GET /
 contactsRouter.openapi(
   createRoute({
@@ -32,13 +35,13 @@ contactsRouter.openapi(
     responses: {
       200: {
         description: "List of contacts",
-        content: { "application/json": { schema: z.array(ContactSchema) } },
+        content: { "application/json": { schema: wrapSuccess(z.array(ContactSchema)) } },
       },
     },
   }),
   async (c) => {
     const result = await listContacts();
-    return c.json(result as any, 200);
+    return success(c, result as unknown as ContactResponse[], 200);
   },
 );
 
@@ -53,19 +56,19 @@ contactsRouter.openapi(
     responses: {
       200: {
         description: "Contact found",
-        content: { "application/json": { schema: ContactSchema } },
+        content: { "application/json": { schema: wrapSuccess(ContactSchema) } },
       },
       404: {
         description: "Contact not found",
-        content: { "application/json": { schema: ErrorSchema } },
+        content: { "application/json": { schema: ErrorResponseSchema } },
       },
     },
   }),
   async (c) => {
     const { id } = c.req.valid("param");
     const contact = await getContact(id);
-    if (!contact) return c.json({ error: "Contact not found" }, 404);
-    return c.json(contact as any, 200);
+    if (!contact) return error(c, "Contact not found", 404);
+    return success(c, contact as unknown as ContactResponse, 200);
   },
 );
 
@@ -90,11 +93,11 @@ contactsRouter.openapi(
     responses: {
       201: {
         description: "Contact created",
-        content: { "application/json": { schema: ContactSchema } },
+        content: { "application/json": { schema: wrapSuccess(ContactSchema) } },
       },
       400: {
         description: "Invalid input",
-        content: { "application/json": { schema: ErrorSchema } },
+        content: { "application/json": { schema: ErrorResponseSchema } },
       },
     },
   }),
@@ -110,7 +113,7 @@ contactsRouter.openapi(
         metadata: data.metadata ?? {},
       })
       .returning();
-    return c.json(contact as any, 201);
+    return success(c, contact as unknown as ContactResponse, 201);
   },
 );
 
@@ -134,11 +137,11 @@ contactsRouter.openapi(
     responses: {
       200: {
         description: "Contact updated",
-        content: { "application/json": { schema: ContactSchema } },
+        content: { "application/json": { schema: wrapSuccess(ContactSchema) } },
       },
       404: {
         description: "Contact not found",
-        content: { "application/json": { schema: ErrorSchema } },
+        content: { "application/json": { schema: ErrorResponseSchema } },
       },
     },
   }),
@@ -146,8 +149,8 @@ contactsRouter.openapi(
     const { id } = c.req.valid("param");
     const data = c.req.valid("json");
     const contact = await updateContact(id, data);
-    if (!contact) return c.json({ error: "Contact not found" }, 404);
-    return c.json(contact as any, 200);
+    if (!contact) return error(c, "Contact not found", 404);
+    return success(c, contact as unknown as ContactResponse, 200);
   },
 );
 

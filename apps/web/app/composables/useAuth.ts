@@ -8,7 +8,7 @@ export function useAuth() {
   const isAuthenticated = computed(() => !!token.value);
 
   async function login(email: string, password: string) {
-    const res = await api.post<AuthResponse>("/auth/login", { email, password });
+    const res = await api.post<AuthResponse>("/v1/auth/login", { email, password });
     token.value = res.token;
     user.value = res.user;
     return res;
