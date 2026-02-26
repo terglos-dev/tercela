@@ -2,9 +2,9 @@
   <UDashboardGroup>
     <UDashboardSidebar collapsible :default-size="15">
       <template #header="{ collapsed }">
-        <div class="flex items-center gap-2.5 px-3 py-3">
+        <div class="flex items-center gap-2.5 px-3 py-4">
           <UIcon name="i-lucide-radio" class="text-primary size-5 shrink-0" />
-          <span v-if="!collapsed" class="font-semibold tracking-tight">Tercela</span>
+          <span v-if="!collapsed" class="font-semibold tracking-tight text-[var(--ui-text-highlighted)]">Tercela</span>
         </div>
       </template>
 

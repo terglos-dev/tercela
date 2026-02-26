@@ -1,2 +1,25 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+/* ── Vintage-clean refinements ── */
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Warm cream base for light mode */
+:root {
+  --ui-bg: #faf8f4;
+  --ui-bg-muted: #f3efe8;
+  --ui-bg-elevated: #ffffff;
+  --ui-border: #e8e2d9;
+}
+
+/* Warm dark base for dark mode */
+.dark {
+  --ui-bg: #1b1914;
+  --ui-bg-muted: #23201a;
+  --ui-bg-elevated: #2a2621;
+  --ui-border: #3a352d;
+}
