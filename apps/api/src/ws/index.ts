@@ -7,7 +7,6 @@ export interface WsData {
 
 export function handleWsOpen(ws: ServerWebSocket<WsData>) {
   ws.subscribe("conversations");
-  console.log("[WS] Client connected");
 }
 
 export function handleWsMessage(ws: ServerWebSocket<WsData>, raw: string | Buffer) {
@@ -26,6 +25,6 @@ export function handleWsMessage(ws: ServerWebSocket<WsData>, raw: string | Buffe
   }
 }
 
-export function handleWsClose(ws: ServerWebSocket<WsData>) {
-  console.log("[WS] Client disconnected");
+export function handleWsClose(_ws: ServerWebSocket<WsData>) {
+  // no-op
 }

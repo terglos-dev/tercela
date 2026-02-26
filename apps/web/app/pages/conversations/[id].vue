@@ -175,7 +175,7 @@ onMounted(() => {
   fetchConversations();
   on("message:new", (event) => {
     const msg = event.payload as Serialized<Message>;
-    if (msg.conversationId === conversationId.value) {
+    if (msg.conversationId === conversationId.value && !messages.value.some((m) => m.id === msg.id)) {
       messages.value.push(msg);
       scrollToBottom();
     }

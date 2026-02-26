@@ -11,7 +11,10 @@ export function useWebSocket() {
   function connect() {
     if (ws && ws.readyState === WebSocket.OPEN) return;
 
-    ws = new WebSocket(config.public.wsUrl);
+    const token = useCookie("auth_token").value;
+    if (!token) return;
+
+    ws = new WebSocket(`${config.public.wsUrl}?token=${token}`);
 
     ws.onmessage = (event) => {
       try {

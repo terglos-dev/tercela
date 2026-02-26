@@ -95,6 +95,22 @@ messagesRouter.openapi(
     const senderId = jwtPayload.sub as string;
 
     const msg = await sendOutboundMessage(id, data.content, senderId, data.type);
+
+    const server = globalThis.__bunServer;
+    if (server) {
+      server.publish(
+        `conversation:${id}`,
+        JSON.stringify({ type: "message:new", payload: msg }),
+      );
+      server.publish(
+        "conversations",
+        JSON.stringify({
+          type: "conversation:updated",
+          payload: { conversationId: id, lastMessageAt: new Date() },
+        }),
+      );
+    }
+
     return success(c, msg as unknown as MessageResponse, 201);
   },
 );
