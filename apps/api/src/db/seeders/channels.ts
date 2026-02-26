@@ -13,7 +13,7 @@ export const channelSeeder: Seeder = {
   async run(db) {
     await db.insert(channels).values({
       type: "whatsapp",
-      name: "WhatsApp Principal",
+      name: "Main WhatsApp",
       config: {
         phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || "",
         accessToken: process.env.WHATSAPP_ACCESS_TOKEN || "",
@@ -22,6 +22,6 @@ export const channelSeeder: Seeder = {
       isActive: true,
     });
 
-    console.log("  → Canal WhatsApp Principal criado");
+    console.log("  → Main WhatsApp channel created");
   },
 };
