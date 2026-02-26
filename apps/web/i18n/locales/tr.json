@@ -67,6 +67,8 @@
   "channels.loadingAccounts": "WhatsApp hesapları yükleniyor...",
   "channels.noAccountsFound": "WhatsApp Business hesabı bulunamadı",
   "channels.connectNumber": "Bu numarayı bağla",
+  "channels.phoneNumber": "Telefon Numarası",
+  "channels.verifiedName": "Doğrulanmış Ad",
 
   "settings.title": "Ayarlar",
   "settings.agents": "Temsilciler",

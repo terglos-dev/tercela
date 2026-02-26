@@ -41,51 +41,24 @@
             </div>
           </UFormField>
 
+          <!-- WhatsApp read-only info -->
           <template v-if="channel.type === 'whatsapp'">
-            <UFormField :label="$t('channels.whatsapp.phoneNumberId')">
-              <UInput
-                v-model="form.config.phoneNumberId"
-                :placeholder="configPlaceholder('phoneNumberId')"
-                class="w-full"
-                @focus="clearMaskedField('phoneNumberId')"
-              />
-            </UFormField>
+            <div class="space-y-4 rounded-lg border border-[var(--ui-border)] p-4">
+              <div v-if="whatsappConfig.displayPhoneNumber">
+                <p class="text-sm font-medium text-[var(--ui-text-dimmed)] mb-1">{{ $t('channels.phoneNumber') }}</p>
+                <p class="text-base">{{ phoneWithFlag(whatsappConfig.displayPhoneNumber) }}</p>
+              </div>
 
-            <UFormField :label="$t('channels.whatsapp.accessToken')">
-              <UInput
-                v-model="form.config.accessToken"
-                :placeholder="configPlaceholder('accessToken')"
-                class="w-full"
-                @focus="clearMaskedField('accessToken')"
-              />
-            </UFormField>
+              <div v-if="whatsappConfig.verifiedName">
+                <p class="text-sm font-medium text-[var(--ui-text-dimmed)] mb-1">{{ $t('channels.verifiedName') }}</p>
+                <p class="text-base">{{ whatsappConfig.verifiedName }}</p>
+              </div>
 
-            <UFormField :label="$t('channels.whatsapp.appSecret')">
-              <UInput
-                v-model="form.config.appSecret"
-                :placeholder="configPlaceholder('appSecret')"
-                class="w-full"
-                @focus="clearMaskedField('appSecret')"
-              />
-            </UFormField>
-
-            <UFormField :label="$t('channels.whatsapp.verifyToken')">
-              <UInput
-                v-model="form.config.verifyToken"
-                :placeholder="configPlaceholder('verifyToken')"
-                class="w-full"
-                @focus="clearMaskedField('verifyToken')"
-              />
-            </UFormField>
-
-            <UFormField :label="$t('channels.whatsapp.businessAccountId')">
-              <UInput
-                v-model="form.config.businessAccountId"
-                :placeholder="configPlaceholder('businessAccountId')"
-                class="w-full"
-                @focus="clearMaskedField('businessAccountId')"
-              />
-            </UFormField>
+              <div v-if="whatsappConfig.wabaId">
+                <p class="text-sm font-medium text-[var(--ui-text-dimmed)] mb-1">WABA ID</p>
+                <p class="text-base font-mono text-sm">{{ whatsappConfig.wabaId }}</p>
+              </div>
+            </div>
           </template>
 
           <div class="flex justify-between">
@@ -113,6 +86,7 @@
 
 <script setup lang="ts">
 import type { ChannelListItem } from "~/types/api";
+import { phoneWithFlag } from "~/utils/phone";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -130,46 +104,28 @@ const deactivating = ref(false);
 const form = reactive({
   name: "",
   isActive: true,
-  config: {
-    phoneNumberId: "",
-    accessToken: "",
-    appSecret: "",
-    verifyToken: "",
-    businessAccountId: "",
-  },
 });
 
-// Original masked config from backend, used for placeholder display
-const originalConfig = ref<Record<string, unknown>>({});
-
-function configPlaceholder(key: string): string {
-  const val = originalConfig.value[key];
-  return typeof val === "string" ? val : "";
-}
-
-function clearMaskedField(key: string) {
-  const current = form.config[key as keyof typeof form.config];
-  // If the field still holds the masked value, clear it so user can type fresh
-  if (current && typeof current === "string" && current.startsWith("••••")) {
-    form.config[key as keyof typeof form.config] = "";
-  }
-}
+const whatsappConfig = reactive({
+  displayPhoneNumber: "",
+  verifiedName: "",
+  wabaId: "",
+});
 
 onMounted(async () => {
   try {
     const data = await api.get<ChannelListItem>(`/v1/channels/${channelId}`);
     channel.value = data;
-    originalConfig.value = { ...(data.config as Record<string, unknown>) };
 
     form.name = data.name;
     form.isActive = data.isActive;
 
-    const cfg = data.config as Record<string, string>;
-    form.config.phoneNumberId = cfg.phoneNumberId || "";
-    form.config.accessToken = cfg.accessToken || "";
-    form.config.appSecret = cfg.appSecret || "";
-    form.config.verifyToken = cfg.verifyToken || "";
-    form.config.businessAccountId = cfg.businessAccountId || "";
+    if (data.type === "whatsapp") {
+      const cfg = data.config as Record<string, string>;
+      whatsappConfig.displayPhoneNumber = cfg.displayPhoneNumber || "";
+      whatsappConfig.verifiedName = cfg.verifiedName || "";
+      whatsappConfig.wabaId = cfg.wabaId || cfg.businessAccountId || "";
+    }
   } finally {
     loading.value = false;
   }
@@ -178,34 +134,7 @@ onMounted(async () => {
 async function onSave() {
   saving.value = true;
   try {
-    // Only send config fields that were changed (not still masked)
-    const configUpdate: Record<string, unknown> = {};
-    for (const [key, val] of Object.entries(form.config)) {
-      if (typeof val === "string" && !val.startsWith("••••") && val !== "") {
-        configUpdate[key] = val;
-      }
-    }
-
-    // If user cleared masked fields but didn't type new values, keep originals on server
-    // by not sending those keys at all. Merge with non-masked original values.
-    const fullConfig: Record<string, unknown> = {};
-    for (const key of Object.keys(form.config)) {
-      const formVal = form.config[key as keyof typeof form.config];
-      if (typeof formVal === "string" && formVal.startsWith("••••")) {
-        // Don't send — server keeps existing value
-      } else if (typeof formVal === "string" && formVal === "") {
-        // Empty means user cleared it — don't overwrite server value
-      } else {
-        fullConfig[key] = formVal;
-      }
-    }
-
-    const payload: Record<string, unknown> = { name: form.name, isActive: form.isActive };
-    if (Object.keys(fullConfig).length > 0) {
-      payload.config = fullConfig;
-    }
-
-    await updateChannel(channelId, payload);
+    await updateChannel(channelId, { name: form.name, isActive: form.isActive });
     toast.add({ title: t("channels.saved"), color: "success" });
     router.push("/channels");
   } catch (err: unknown) {

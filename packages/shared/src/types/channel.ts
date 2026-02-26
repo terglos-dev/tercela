@@ -16,4 +16,7 @@ export interface WhatsAppChannelConfig {
   verifyToken: string;
   appSecret?: string;
   businessAccountId?: string;
+  displayPhoneNumber?: string;
+  verifiedName?: string;
+  wabaId?: string;
 }

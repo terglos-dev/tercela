@@ -67,6 +67,8 @@
   "channels.loadingAccounts": "Loading WhatsApp accounts...",
   "channels.noAccountsFound": "No WhatsApp Business accounts found",
   "channels.connectNumber": "Connect this number",
+  "channels.phoneNumber": "Phone Number",
+  "channels.verifiedName": "Verified Name",
 
   "settings.title": "Settings",
   "settings.agents": "Agents",

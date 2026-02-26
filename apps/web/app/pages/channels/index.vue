@@ -23,6 +23,20 @@
           class="cursor-pointer"
           @select="onRowClick"
         >
+          <template #name-cell="{ row }">
+            <div>
+              <span>{{ row.original.name }}</span>
+              <p v-if="getVerifiedName(row.original)" class="text-xs text-[var(--ui-text-dimmed)]">
+                {{ getVerifiedName(row.original) }}
+              </p>
+            </div>
+          </template>
+          <template #phone-cell="{ row }">
+            <span v-if="getDisplayPhone(row.original)" class="whitespace-nowrap">
+              {{ phoneWithFlag(getDisplayPhone(row.original)) }}
+            </span>
+            <span v-else class="text-[var(--ui-text-dimmed)]">—</span>
+          </template>
           <template #type-cell="{ row }">
             <UBadge color="info" variant="subtle" size="xs" :icon="channelIcon(row.original.type)">
               {{ row.original.type }}
@@ -66,6 +80,7 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { ChannelListItem } from "~/types/api";
+import { phoneWithFlag } from "~/utils/phone";
 
 const { t, locale } = useI18n();
 const router = useRouter();
@@ -73,10 +88,19 @@ const { channels, loading, fetchChannels } = useChannels();
 
 const columns = computed<TableColumn<ChannelListItem>[]>(() => [
   { accessorKey: "name", header: t("channels.name") },
+  { id: "phone", header: t("channels.phoneNumber") },
   { accessorKey: "type", header: t("channels.type") },
   { accessorKey: "isActive", header: t("channels.status") },
   { accessorKey: "createdAt", header: t("channels.created") },
 ]);
+
+function getDisplayPhone(ch: ChannelListItem): string {
+  return (ch.config as Record<string, string>)?.displayPhoneNumber || "";
+}
+
+function getVerifiedName(ch: ChannelListItem): string {
+  return (ch.config as Record<string, string>)?.verifiedName || "";
+}
 
 function channelIcon(type: string) {
   if (type === "whatsapp") return "i-lucide-message-circle";

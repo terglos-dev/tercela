@@ -67,6 +67,8 @@
   "channels.loadingAccounts": "Memuat akun WhatsApp...",
   "channels.noAccountsFound": "Tidak ditemukan akun WhatsApp Business",
   "channels.connectNumber": "Hubungkan nomor ini",
+  "channels.phoneNumber": "Nomor Telepon",
+  "channels.verifiedName": "Nama Terverifikasi",
 
   "settings.title": "Pengaturan",
   "settings.agents": "Agen",
