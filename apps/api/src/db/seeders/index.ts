@@ -9,7 +9,7 @@ export const seeders: Seeder[] = [
   channelSeeder,
 ];
 
-export async function autoSeed(db: PostgresJsDatabase) {
+export async function autoSeed(db: PostgresJsDatabase<Record<string, unknown>>) {
   for (const seeder of seeders) {
     if (await seeder.shouldRun(db)) {
       console.log(`[Seed] ${seeder.name}`);

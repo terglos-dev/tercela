@@ -3,11 +3,11 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { error } from "../utils/response";
 
 export const errorHandler: ErrorHandler = (err, c) => {
-  console.error(`[Error] ${err.message}`, err.stack);
+  const status = "status" in err && typeof err.status === "number" ? err.status : 500;
 
-  if ("status" in err && typeof err.status === "number") {
-    return error(c, err.message, err.status as ContentfulStatusCode);
+  if (status >= 500) {
+    console.error(`[Error] ${err.message}`, err.stack);
   }
 
-  return error(c, "Internal server error", 500);
+  return error(c, status >= 500 ? "Internal server error" : err.message, status as ContentfulStatusCode);
 };

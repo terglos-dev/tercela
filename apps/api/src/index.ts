@@ -10,7 +10,7 @@ declare global {
 
 async function start() {
   await autoMigrate(env.DATABASE_URL);
-  await autoSeed(db as any);
+  await autoSeed(db);
 
   const server = Bun.serve({
     port: env.API_PORT,

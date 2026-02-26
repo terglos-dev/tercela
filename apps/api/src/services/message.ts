@@ -1,16 +1,38 @@
-import { eq, asc } from "drizzle-orm";
+import { eq, and, lt, desc } from "drizzle-orm";
 import { db } from "../db";
 import { messages, conversations, contacts, channels } from "../db/schema";
 import { getAdapter } from "../channels";
-import type { ChannelType } from "@tercela/shared";
+import type { ChannelType, MessageType } from "@tercela/shared";
 import type { IncomingMessage } from "../channels/types";
 
-export async function listMessages(conversationId: string) {
-  return db
+export async function listMessages(
+  conversationId: string,
+  opts: { limit?: number; before?: string } = {},
+) {
+  const limit = Math.min(Math.max(opts.limit ?? 50, 1), 100);
+
+  const where = opts.before
+    ? and(eq(messages.conversationId, conversationId), lt(messages.createdAt, new Date(opts.before)))
+    : eq(messages.conversationId, conversationId);
+
+  const result = await db
     .select()
     .from(messages)
-    .where(eq(messages.conversationId, conversationId))
-    .orderBy(asc(messages.createdAt));
+    .where(where)
+    .orderBy(desc(messages.createdAt))
+    .limit(limit + 1);
+
+  const hasMore = result.length > limit;
+  if (hasMore) result.pop();
+
+  // Reverse to chronological order (oldest first)
+  result.reverse();
+
+  const nextCursor = hasMore && result.length > 0
+    ? result[0].createdAt.toISOString()
+    : null;
+
+  return { data: result, nextCursor, hasMore };
 }
 
 export async function createInboundMessage(conversationId: string, incoming: IncomingMessage) {
@@ -34,7 +56,7 @@ export async function createInboundMessage(conversationId: string, incoming: Inc
   return msg;
 }
 
-export async function sendOutboundMessage(conversationId: string, content: string, senderId: string, type: string = "text") {
+export async function sendOutboundMessage(conversationId: string, content: string, senderId: string, type: MessageType = "text") {
   const [conv] = await db
     .select({
       id: conversations.id,
@@ -55,7 +77,7 @@ export async function sendOutboundMessage(conversationId: string, content: strin
   const adapter = getAdapter(channel.type as ChannelType);
   const result = await adapter.sendMessage(channel.config as Record<string, unknown>, {
     to: contact.externalId,
-    type: type as any,
+    type,
     content,
   });
 

@@ -1,0 +1,50 @@
+{
+  "app.title": "Tercela",
+  "app.description": "Open-source omnichannel platform for customer communication",
+
+  "nav.conversations": "Conversations",
+  "nav.contacts": "Contacts",
+  "nav.settings": "Settings",
+  "nav.signOut": "Sign out",
+
+  "login.title": "Sign in to Tercela",
+  "login.subtitle": "Open-source omnichannel platform",
+  "login.email": "Email",
+  "login.password": "Password",
+  "login.emailPlaceholder": "your{'@'}email.com",
+  "login.submit": "Sign in",
+  "login.error": "Invalid credentials",
+
+  "conversations.title": "Conversations",
+  "conversations.empty": "No conversations",
+  "conversations.select": "Select a conversation",
+  "conversations.unknown": "Unknown",
+
+  "chat.conversation": "Conversation",
+  "chat.noMessages": "No messages yet",
+  "chat.placeholder": "Type a message...",
+  "chat.sendFailed": "Failed to send message",
+  "chat.statusChanged": "Conversation marked as {status}",
+
+  "contacts.title": "Contacts",
+  "contacts.empty": "No contacts found",
+  "contacts.name": "Name",
+  "contacts.phone": "Phone",
+  "contacts.channel": "Channel",
+  "contacts.createdAt": "Created at",
+  "contacts.unknown": "Unknown",
+
+  "settings.title": "Settings",
+  "settings.agents": "Agents",
+  "settings.newAgent": "New Agent",
+  "settings.name": "Name",
+  "settings.email": "Email",
+  "settings.password": "Password",
+  "settings.role": "Role",
+  "settings.createAgent": "Create agent",
+  "settings.namePlaceholder": "Full name",
+  "settings.emailPlaceholder": "email{'@'}company.com",
+  "settings.passwordPlaceholder": "Minimum 6 characters",
+  "settings.agentCreated": "Agent created",
+  "settings.createFailed": "Failed to create agent"
+}

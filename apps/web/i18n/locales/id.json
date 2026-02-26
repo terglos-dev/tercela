@@ -1,0 +1,50 @@
+{
+  "app.title": "Tercela",
+  "app.description": "Platform omnichannel open-source untuk komunikasi pelanggan",
+
+  "nav.conversations": "Percakapan",
+  "nav.contacts": "Kontak",
+  "nav.settings": "Pengaturan",
+  "nav.signOut": "Keluar",
+
+  "login.title": "Masuk ke Tercela",
+  "login.subtitle": "Platform omnichannel open-source",
+  "login.email": "Email",
+  "login.password": "Kata sandi",
+  "login.emailPlaceholder": "email{'@'}anda.com",
+  "login.submit": "Masuk",
+  "login.error": "Kredensial tidak valid",
+
+  "conversations.title": "Percakapan",
+  "conversations.empty": "Tidak ada percakapan",
+  "conversations.select": "Pilih percakapan",
+  "conversations.unknown": "Tidak dikenal",
+
+  "chat.conversation": "Percakapan",
+  "chat.noMessages": "Belum ada pesan",
+  "chat.placeholder": "Ketik pesan...",
+  "chat.sendFailed": "Gagal mengirim pesan",
+  "chat.statusChanged": "Percakapan ditandai sebagai {status}",
+
+  "contacts.title": "Kontak",
+  "contacts.empty": "Tidak ada kontak ditemukan",
+  "contacts.name": "Nama",
+  "contacts.phone": "Telepon",
+  "contacts.channel": "Kanal",
+  "contacts.createdAt": "Tanggal dibuat",
+  "contacts.unknown": "Tidak dikenal",
+
+  "settings.title": "Pengaturan",
+  "settings.agents": "Agen",
+  "settings.newAgent": "Agen Baru",
+  "settings.name": "Nama",
+  "settings.email": "Email",
+  "settings.password": "Kata sandi",
+  "settings.role": "Peran",
+  "settings.createAgent": "Buat agen",
+  "settings.namePlaceholder": "Nama lengkap",
+  "settings.emailPlaceholder": "email{'@'}perusahaan.com",
+  "settings.passwordPlaceholder": "Minimal 6 karakter",
+  "settings.agentCreated": "Agen berhasil dibuat",
+  "settings.createFailed": "Gagal membuat agen"
+}

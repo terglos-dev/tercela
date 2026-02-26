@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel>
     <template #header>
-      <UDashboardNavbar :title="currentConversation?.contact?.name || 'Conversation'" icon="i-lucide-message-square">
+      <UDashboardNavbar :title="currentConversation?.contact?.name || $t('chat.conversation')" icon="i-lucide-message-square">
         <template #right>
           <USelect
             :model-value="currentConversation?.status"
@@ -29,7 +29,7 @@
             >
               <UAvatar :alt="conv.contact?.name || '?'" size="sm" icon="i-lucide-user" />
               <div class="flex-1 min-w-0">
-                <div class="font-medium text-sm truncate">{{ conv.contact?.name || conv.contact?.phone || "Unknown" }}</div>
+                <div class="font-medium text-sm truncate">{{ conv.contact?.name || conv.contact?.phone || $t("conversations.unknown") }}</div>
                 <div class="flex gap-1.5 mt-1">
                   <UBadge color="info" variant="subtle" size="xs">{{ conv.channel?.type }}</UBadge>
                 </div>
@@ -40,14 +40,18 @@
 
         <!-- Chat -->
         <div class="flex-1 flex flex-col">
-          <div ref="messagesContainer" class="flex-1 overflow-y-auto p-5 space-y-3">
+          <div ref="messagesContainer" class="flex-1 overflow-y-auto p-5 space-y-3" @scroll="handleScroll">
+            <div v-if="loadingMore" class="flex items-center justify-center py-2">
+              <UIcon name="i-lucide-loader-2" class="animate-spin size-4 text-[var(--ui-text-muted)]" />
+            </div>
+
             <div v-if="messagesLoading" class="flex items-center justify-center h-full">
               <UIcon name="i-lucide-loader-2" class="animate-spin size-5 text-[var(--ui-text-muted)]" />
             </div>
 
             <div v-else-if="messages.length === 0" class="flex flex-col items-center justify-center h-full gap-2 text-[var(--ui-text-muted)]">
               <UIcon name="i-lucide-message-circle" class="size-10" />
-              <span class="text-sm">No messages yet</span>
+              <span class="text-sm">{{ $t("chat.noMessages") }}</span>
             </div>
 
             <template v-else>
@@ -76,7 +80,7 @@
           <div class="border-t border-[var(--ui-border)] p-3 flex gap-2">
             <UInput
               v-model="newMessage"
-              placeholder="Type a message..."
+              :placeholder="$t('chat.placeholder')"
               class="flex-1"
               :disabled="sending"
               @keydown.enter.exact.prevent="handleSend"
@@ -95,11 +99,14 @@
 </template>
 
 <script setup lang="ts">
+import type { Serialized, Message } from "@tercela/shared";
+
 const route = useRoute();
+const { t, locale } = useI18n();
 const conversationId = computed(() => route.params.id as string);
 
 const { conversations, fetchConversations, updateConversation } = useConversations();
-const { messages, loading: messagesLoading, fetchMessages, sendMessage } = useMessages();
+const { messages, loading: messagesLoading, loadingMore, hasMore, fetchMessages, loadMore, sendMessage } = useMessages();
 const { on, subscribe, unsubscribe } = useWebSocket();
 const toast = useToast();
 
@@ -114,7 +121,7 @@ const currentConversation = computed(() =>
 );
 
 function formatTime(date: string) {
-  return new Date(date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+  return new Date(date).toLocaleTimeString(locale.value, { hour: "2-digit", minute: "2-digit" });
 }
 
 async function handleSend() {
@@ -125,7 +132,7 @@ async function handleSend() {
     newMessage.value = "";
     scrollToBottom();
   } catch {
-    toast.add({ title: "Failed to send message", color: "error", icon: "i-lucide-alert-circle" });
+    toast.add({ title: t("chat.sendFailed"), color: "error", icon: "i-lucide-alert-circle" });
   } finally {
     sending.value = false;
   }
@@ -133,13 +140,26 @@ async function handleSend() {
 
 async function handleStatusChange(status: string) {
   await updateConversation(conversationId.value, { status });
-  toast.add({ title: `Conversation marked as ${status}`, icon: "i-lucide-check", color: "success" });
+  toast.add({ title: t("chat.statusChanged", { status }), icon: "i-lucide-check", color: "success" });
 }
 
 function scrollToBottom() {
   nextTick(() => {
     if (messagesContainer.value) {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    }
+  });
+}
+
+async function handleScroll() {
+  const el = messagesContainer.value;
+  if (!el || el.scrollTop > 100 || !hasMore.value || loadingMore.value) return;
+
+  const prevHeight = el.scrollHeight;
+  await loadMore(conversationId.value);
+  nextTick(() => {
+    if (el) {
+      el.scrollTop = el.scrollHeight - prevHeight;
     }
   });
 }
@@ -154,7 +174,7 @@ watch(conversationId, (id) => {
 onMounted(() => {
   fetchConversations();
   on("message:new", (event) => {
-    const msg = event.payload as any;
+    const msg = event.payload as Serialized<Message>;
     if (msg.conversationId === conversationId.value) {
       messages.value.push(msg);
       scrollToBottom();

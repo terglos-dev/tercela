@@ -22,7 +22,9 @@ const props = defineProps<{
   createdAt: string;
 }>();
 
+const { locale } = useI18n();
+
 const formattedTime = computed(() =>
-  new Date(props.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+  new Date(props.createdAt).toLocaleTimeString(locale.value, { hour: "2-digit", minute: "2-digit" })
 );
 </script>

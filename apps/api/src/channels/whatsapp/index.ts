@@ -40,6 +40,7 @@ export const whatsappAdapter: ChannelAdapter = {
   },
 
   parseIncoming(body: unknown): IncomingMessage | null {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- WhatsApp webhook payload is deeply nested and untyped
     const payload = body as Record<string, any>;
     const entry = payload?.entry?.[0];
     const changes = entry?.changes?.[0];

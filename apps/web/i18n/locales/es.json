@@ -1,0 +1,50 @@
+{
+  "app.title": "Tercela",
+  "app.description": "Plataforma omnicanal de código abierto para comunicación con clientes",
+
+  "nav.conversations": "Conversaciones",
+  "nav.contacts": "Contactos",
+  "nav.settings": "Configuración",
+  "nav.signOut": "Cerrar sesión",
+
+  "login.title": "Iniciar sesión en Tercela",
+  "login.subtitle": "Plataforma omnicanal de código abierto",
+  "login.email": "Correo electrónico",
+  "login.password": "Contraseña",
+  "login.emailPlaceholder": "tu{'@'}correo.com",
+  "login.submit": "Iniciar sesión",
+  "login.error": "Credenciales inválidas",
+
+  "conversations.title": "Conversaciones",
+  "conversations.empty": "Sin conversaciones",
+  "conversations.select": "Selecciona una conversación",
+  "conversations.unknown": "Desconocido",
+
+  "chat.conversation": "Conversación",
+  "chat.noMessages": "Aún no hay mensajes",
+  "chat.placeholder": "Escribe un mensaje...",
+  "chat.sendFailed": "Error al enviar mensaje",
+  "chat.statusChanged": "Conversación marcada como {status}",
+
+  "contacts.title": "Contactos",
+  "contacts.empty": "No se encontraron contactos",
+  "contacts.name": "Nombre",
+  "contacts.phone": "Teléfono",
+  "contacts.channel": "Canal",
+  "contacts.createdAt": "Fecha de creación",
+  "contacts.unknown": "Desconocido",
+
+  "settings.title": "Configuración",
+  "settings.agents": "Agentes",
+  "settings.newAgent": "Nuevo Agente",
+  "settings.name": "Nombre",
+  "settings.email": "Correo electrónico",
+  "settings.password": "Contraseña",
+  "settings.role": "Rol",
+  "settings.createAgent": "Crear agente",
+  "settings.namePlaceholder": "Nombre completo",
+  "settings.emailPlaceholder": "correo{'@'}empresa.com",
+  "settings.passwordPlaceholder": "Mínimo 6 caracteres",
+  "settings.agentCreated": "Agente creado",
+  "settings.createFailed": "Error al crear agente"
+}

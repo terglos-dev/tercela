@@ -20,7 +20,7 @@ const { upgradeWebSocket, websocket } = createBunWebSocket<WsData>();
 const app = new OpenAPIHono();
 
 // Global middleware
-app.use("*", logger());
+if (process.env.DEBUG_HTTP) app.use("*", logger());
 app.use("*", cors({ origin: ["http://localhost:3000"], credentials: true }));
 app.onError(errorHandler);
 

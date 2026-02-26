@@ -1,0 +1,50 @@
+{
+  "app.title": "Tercela",
+  "app.description": "Müşteri iletişimi için açık kaynak çok kanallı platform",
+
+  "nav.conversations": "Görüşmeler",
+  "nav.contacts": "Kişiler",
+  "nav.settings": "Ayarlar",
+  "nav.signOut": "Çıkış yap",
+
+  "login.title": "Tercela'ya giriş yap",
+  "login.subtitle": "Açık kaynak çok kanallı platform",
+  "login.email": "E-posta",
+  "login.password": "Şifre",
+  "login.emailPlaceholder": "eposta{'@'}adresiniz.com",
+  "login.submit": "Giriş yap",
+  "login.error": "Geçersiz kimlik bilgileri",
+
+  "conversations.title": "Görüşmeler",
+  "conversations.empty": "Görüşme yok",
+  "conversations.select": "Bir görüşme seçin",
+  "conversations.unknown": "Bilinmiyor",
+
+  "chat.conversation": "Görüşme",
+  "chat.noMessages": "Henüz mesaj yok",
+  "chat.placeholder": "Bir mesaj yazın...",
+  "chat.sendFailed": "Mesaj gönderilemedi",
+  "chat.statusChanged": "Görüşme {status} olarak işaretlendi",
+
+  "contacts.title": "Kişiler",
+  "contacts.empty": "Kişi bulunamadı",
+  "contacts.name": "Ad",
+  "contacts.phone": "Telefon",
+  "contacts.channel": "Kanal",
+  "contacts.createdAt": "Oluşturulma tarihi",
+  "contacts.unknown": "Bilinmiyor",
+
+  "settings.title": "Ayarlar",
+  "settings.agents": "Temsilciler",
+  "settings.newAgent": "Yeni Temsilci",
+  "settings.name": "Ad",
+  "settings.email": "E-posta",
+  "settings.password": "Şifre",
+  "settings.role": "Rol",
+  "settings.createAgent": "Temsilci oluştur",
+  "settings.namePlaceholder": "Tam ad",
+  "settings.emailPlaceholder": "eposta{'@'}sirket.com",
+  "settings.passwordPlaceholder": "En az 6 karakter",
+  "settings.agentCreated": "Temsilci oluşturuldu",
+  "settings.createFailed": "Temsilci oluşturulamadı"
+}

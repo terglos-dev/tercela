@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel>
     <template #header>
-      <UDashboardNavbar title="Conversations" icon="i-lucide-message-square">
+      <UDashboardNavbar :title="$t('conversations.title')" icon="i-lucide-message-square">
         <template #right>
           <UColorModeButton />
         </template>
@@ -18,7 +18,7 @@
 
           <div v-else-if="conversations.length === 0" class="flex-1 flex flex-col items-center justify-center gap-2 text-[var(--ui-text-muted)]">
             <UIcon name="i-lucide-inbox" class="size-10" />
-            <span class="text-sm">No conversations</span>
+            <span class="text-sm">{{ $t("conversations.empty") }}</span>
           </div>
 
           <div v-else class="flex-1 overflow-y-auto">
@@ -30,7 +30,7 @@
             >
               <UAvatar :alt="conv.contact?.name || '?'" size="sm" icon="i-lucide-user" />
               <div class="flex-1 min-w-0">
-                <div class="font-medium text-sm truncate">{{ conv.contact?.name || conv.contact?.phone || "Unknown" }}</div>
+                <div class="font-medium text-sm truncate">{{ conv.contact?.name || conv.contact?.phone || $t("conversations.unknown") }}</div>
                 <div class="flex gap-1.5 mt-1">
                   <UBadge color="info" variant="subtle" size="xs" :icon="channelIcon(conv.channel?.type)">
                     {{ conv.channel?.type }}
@@ -47,7 +47,7 @@
         <!-- Placeholder -->
         <div class="flex-1 flex flex-col items-center justify-center gap-3 text-[var(--ui-text-muted)]">
           <UIcon name="i-lucide-message-circle" class="size-12" />
-          <span>Select a conversation</span>
+          <span>{{ $t("conversations.select") }}</span>
         </div>
       </div>
     </template>
