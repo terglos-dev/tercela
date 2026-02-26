@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "../../db";
 import { channels } from "../../db/schema";
 import { env } from "../../env";
@@ -12,12 +12,12 @@ import type { ChannelType } from "@tercela/shared";
 const whatsappWebhook = new OpenAPIHono();
 
 // Validate Meta's X-Hub-Signature-256 header (HMAC-SHA256)
-async function verifySignature(body: string, signature: string | null): Promise<boolean> {
-  if (!env.WHATSAPP_APP_SECRET || !signature) return true; // skip if not configured
+async function verifySignature(body: string, signature: string | null, appSecret: string | undefined): Promise<boolean> {
+  if (!appSecret || !signature) return true; // skip if not configured
   const expected = signature.replace("sha256=", "");
   const key = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(env.WHATSAPP_APP_SECRET),
+    new TextEncoder().encode(appSecret),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -70,28 +70,42 @@ whatsappWebhook.openapi(
   async (c) => {
     const rawBody = await c.req.text();
     const signature = c.req.header("x-hub-signature-256") ?? null;
+    const body = JSON.parse(rawBody);
 
-    if (!(await verifySignature(rawBody, signature))) {
+    // Extract phoneNumberId from Meta payload to find the correct channel
+    const phoneNumberId = body?.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id;
+
+    const [channel] = phoneNumberId
+      ? await db
+          .select()
+          .from(channels)
+          .where(and(
+            eq(channels.type, "whatsapp"),
+            eq(channels.isActive, true),
+            sql`config->>'phoneNumberId' = ${phoneNumberId}`,
+          ))
+          .limit(1)
+      : await db
+          .select()
+          .from(channels)
+          .where(and(eq(channels.type, "whatsapp"), eq(channels.isActive, true)))
+          .limit(1);
+
+    if (!channel) {
+      console.warn("No WhatsApp channel configured for phoneNumberId:", phoneNumberId);
+      return c.json({ status: "no_channel" }, 200);
+    }
+
+    const config = channel.config as Record<string, string>;
+    if (!(await verifySignature(rawBody, signature, config.appSecret))) {
       return c.json({ status: "invalid_signature" }, 200);
     }
 
-    const body = JSON.parse(rawBody);
     const adapter = getAdapter("whatsapp");
     const incoming = adapter.parseIncoming(body);
 
     if (!incoming) {
       return c.json({ status: "ignored" }, 200);
-    }
-
-    const [channel] = await db
-      .select()
-      .from(channels)
-      .where(eq(channels.type, "whatsapp"))
-      .limit(1);
-
-    if (!channel) {
-      console.warn("No WhatsApp channel configured");
-      return c.json({ status: "no_channel" }, 200);
     }
 
     const contact = await findOrCreateContact({

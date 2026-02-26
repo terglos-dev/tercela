@@ -11,6 +11,7 @@ import { contactsRouter } from "./routes/contacts";
 import { conversationsRouter } from "./routes/conversations";
 import { messagesRouter } from "./routes/messages";
 import { usersRouter } from "./routes/users";
+import { channelsRouter } from "./routes/channels";
 import { whatsappWebhook } from "./routes/webhooks/whatsapp";
 import type { ServerWebSocket } from "bun";
 import { handleWsOpen, handleWsMessage, handleWsClose, type WsData } from "./ws";
@@ -66,9 +67,11 @@ app.get(
 );
 
 // Protected routes
+app.use("/v1/channels/*", authMiddleware);
 app.use("/v1/contacts/*", authMiddleware);
 app.use("/v1/conversations/*", authMiddleware);
 app.use("/v1/users/*", authMiddleware);
+app.route("/v1/channels", channelsRouter);
 app.route("/v1/contacts", contactsRouter);
 app.route("/v1/conversations", conversationsRouter);
 app.route("/v1/conversations", messagesRouter);

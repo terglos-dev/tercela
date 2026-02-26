@@ -17,6 +17,16 @@ export interface ConversationListItem {
   } | null;
 }
 
+export interface ChannelListItem {
+  id: string;
+  type: string;
+  name: string;
+  config: Record<string, unknown>;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface UserListItem {
   id: string;
   name: string;

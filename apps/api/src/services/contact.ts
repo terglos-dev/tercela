@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "../db";
 import { contacts } from "../db/schema";
 import type { ChannelType } from "@tercela/shared";
@@ -12,7 +12,10 @@ export async function findOrCreateContact(data: {
   const [existing] = await db
     .select()
     .from(contacts)
-    .where(eq(contacts.externalId, data.externalId))
+    .where(and(
+      eq(contacts.externalId, data.externalId),
+      eq(contacts.channelType, data.channelType),
+    ))
     .limit(1);
 
   if (existing) return existing;

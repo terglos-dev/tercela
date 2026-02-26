@@ -82,6 +82,7 @@ const navItems = computed<NavigationMenuItem[][]>(() => [
   [
     { label: t("nav.conversations"), icon: "i-lucide-message-square", to: "/conversations" },
     { label: t("nav.contacts"), icon: "i-lucide-users", to: "/contacts" },
+    { label: t("nav.channels"), icon: "i-lucide-radio", to: "/channels" },
   ],
   [
     { label: t("nav.settings"), icon: "i-lucide-settings", to: "/settings" },
