@@ -11,6 +11,22 @@ import type { ChannelType } from "@tercela/shared";
 
 const whatsappWebhook = new OpenAPIHono();
 
+// Validate Meta's X-Hub-Signature-256 header (HMAC-SHA256)
+async function verifySignature(body: string, signature: string | null): Promise<boolean> {
+  if (!env.WHATSAPP_APP_SECRET || !signature) return true; // skip if not configured
+  const expected = signature.replace("sha256=", "");
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(env.WHATSAPP_APP_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
+  const hex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  return hex === expected;
+}
+
 // Webhook verification (GET)
 // Uses raw query params because Meta sends dot-notation keys (hub.mode)
 // which Hono/Zod interprets as nested objects, breaking validation.
@@ -52,8 +68,14 @@ whatsappWebhook.openapi(
     },
   }),
   async (c) => {
-    const body = await c.req.json();
+    const rawBody = await c.req.text();
+    const signature = c.req.header("x-hub-signature-256") ?? null;
 
+    if (!(await verifySignature(rawBody, signature))) {
+      return c.json({ status: "invalid_signature" }, 200);
+    }
+
+    const body = JSON.parse(rawBody);
     const adapter = getAdapter("whatsapp");
     const incoming = adapter.parseIncoming(body);
 

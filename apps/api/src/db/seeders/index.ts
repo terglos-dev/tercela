@@ -1,7 +1,7 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { Seeder } from "./types";
 import { userSeeder } from "./users";
-import { channelSeeder } from "./channels";
+import { channelSeeder, syncWhatsAppChannel } from "./channels";
 
 // Seeders run in this order
 export const seeders: Seeder[] = [
@@ -16,4 +16,6 @@ export async function autoSeed(db: PostgresJsDatabase<Record<string, unknown>>) 
       await seeder.run(db);
     }
   }
+
+  await syncWhatsAppChannel(db);
 }

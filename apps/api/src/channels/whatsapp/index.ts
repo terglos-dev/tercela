@@ -89,6 +89,7 @@ export const whatsappAdapter: ChannelAdapter = {
   },
 
   validateWebhook(_request: Request, _config: Record<string, unknown>): boolean {
+    // Signature validation is handled at the route level via middleware
     return true;
   },
 };
