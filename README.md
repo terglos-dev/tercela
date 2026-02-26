@@ -1,57 +1,90 @@
 # Tercela
 
-Plataforma open-source de atendimento omnichannel. Conecte canais como WhatsApp, gerencie conversas em tempo real e organize contatos — tudo em uma interface unificada.
+Open-source omnichannel platform for customer communication. Connect channels like WhatsApp, manage conversations in real time, and organize contacts — all in a unified interface.
 
-## Pré-requisitos
+## Features
+
+- **Omnichannel inbox** — Manage all conversations from a single dashboard
+- **WhatsApp integration** — Send and receive messages via WhatsApp Cloud API
+- **Real-time updates** — WebSocket-powered live messaging
+- **Channel adapter pattern** — Extensible architecture to add new channels (Instagram, Webchat, etc.)
+- **Contact management** — Centralized contact database with metadata
+- **Agent assignment** — Route conversations to team members
+- **REST API with OpenAPI docs** — Interactive API reference via Scalar
+- **Docker-ready** — One command to run the entire stack
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | [Hono](https://hono.dev) + [Bun](https://bun.sh) |
+| Frontend | [Nuxt 3](https://nuxt.com) + [Nuxt UI](https://ui.nuxt.com) |
+| Database | PostgreSQL + [Drizzle ORM](https://orm.drizzle.team) |
+| Real-time | Bun native WebSocket |
+| Auth | JWT (HS256) |
+
+## Prerequisites
 
 - [Bun](https://bun.sh) >= 1.3
-- [PostgreSQL](https://www.postgresql.org/) 15+ **ou** [Docker](https://www.docker.com/)
+- [PostgreSQL](https://www.postgresql.org/) 15+ **or** [Docker](https://www.docker.com/)
 
-## Quick Start com Docker
+## Quick Start with Docker
 
 ```bash
-git clone https://github.com/tercela/tercela.git
+git clone https://github.com/terglos-dev/tercela.git
 cd tercela
+cp .env.example .env
 docker compose up -d
 ```
 
-Acesse http://localhost:3000 — API em http://localhost:3333/reference.
+Open http://localhost:3000 — API docs at http://localhost:3333/reference.
 
-## Quick Start sem Docker
+## Quick Start without Docker
 
 ```bash
-# 1. Instale dependências
+# 1. Install dependencies
 bun install
 
-# 2. Configure o ambiente
+# 2. Set up environment
 cp .env.example .env
-# Edite .env com sua DATABASE_URL e JWT_SECRET
+# Edit .env with your DATABASE_URL and JWT_SECRET
 
-# 3. Crie as tabelas e seed
-bun run db:push
-bun run db:seed
-
-# 4. Inicie em modo dev
+# 3. Start in dev mode (auto-creates tables and seeds)
 bun run dev
 ```
 
-Acesse http://localhost:3000 — API em http://localhost:3333/reference.
+Open http://localhost:3000 — API docs at http://localhost:3333/reference.
 
-## Credenciais padrão
+## Default Credentials
 
-| Email              | Senha    |
-|--------------------|----------|
-| admin@tercela.com  | admin123 |
+| Email | Password |
+|---|---|
+| admin@tercela.com | admin123 |
 
-## Estrutura do projeto
+> Change these immediately in production.
+
+## Project Structure
 
 ```
 tercela/
 ├── apps/
-│   ├── api/          # Hono + Bun (porta 3333)
-│   └── web/          # Nuxt 3 (porta 3000)
+│   ├── api/            # Hono + Bun REST API (port 3333)
+│   │   ├── src/
+│   │   │   ├── routes/       # API endpoints
+│   │   │   ├── services/     # Business logic
+│   │   │   ├── channels/     # Channel adapters (WhatsApp, ...)
+│   │   │   ├── db/           # Drizzle schema & migrations
+│   │   │   ├── middleware/    # Auth & error handling
+│   │   │   └── ws/           # WebSocket handlers
+│   │   └── Dockerfile
+│   └── web/            # Nuxt 3 frontend (port 3000)
+│       ├── app/
+│       │   ├── pages/        # Application routes
+│       │   ├── components/   # Vue components
+│       │   └── layouts/      # Layout wrappers
+│       └── Dockerfile
 ├── packages/
-│   └── shared/       # Tipos e utilitários compartilhados
+│   └── shared/         # Shared types, constants & utilities
 ├── docker-compose.yml
 ├── .env.example
 └── package.json
@@ -59,20 +92,48 @@ tercela/
 
 ## Scripts
 
-| Comando              | Descrição                          |
-|----------------------|------------------------------------|
-| `bun run dev`        | Inicia API + Web em modo dev       |
-| `bun run dev:api`    | Inicia somente a API               |
-| `bun run dev:web`    | Inicia somente o frontend          |
-| `bun run db:push`    | Aplica schema no banco             |
-| `bun run db:seed`    | Popula banco com dados iniciais    |
-| `bun run docker:up`  | Sobe todos os serviços via Docker  |
-| `bun run docker:down`| Para os serviços Docker            |
+| Command | Description |
+|---|---|
+| `bun run dev` | Start API + Web in dev mode |
+| `bun run dev:api` | Start API only |
+| `bun run dev:web` | Start frontend only |
+| `bun run db:push` | Push schema to database |
+| `bun run db:seed` | Seed database with initial data |
+| `bun run docker:up` | Start all services via Docker |
+| `bun run docker:down` | Stop Docker services |
 
 ## API Reference
 
-Com o servidor rodando, acesse http://localhost:3333/reference para a documentação interativa (Scalar).
+With the server running, open http://localhost:3333/reference for the interactive API documentation (Scalar).
 
-## Licença
+## Database Schemas
 
-MIT
+Tables are organized into named PostgreSQL schemas:
+
+| Schema | Tables | Purpose |
+|---|---|---|
+| `auth` | users | Authentication & user management |
+| `channels` | channels | Communication channel configuration |
+| `contacts` | contacts | Contact database |
+| `inbox` | conversations, messages | Conversation and message data |
+
+## Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string | — |
+| `JWT_SECRET` | Secret key for JWT signing | — |
+| `API_PORT` | API server port | `3333` |
+| `WHATSAPP_VERIFY_TOKEN` | WhatsApp webhook verification token | — |
+| `WHATSAPP_ACCESS_TOKEN` | WhatsApp Cloud API access token | — |
+| `WHATSAPP_PHONE_NUMBER_ID` | WhatsApp phone number ID | — |
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request.
+
+## License
+
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+
+See [NOTICE](NOTICE) for attribution details.
