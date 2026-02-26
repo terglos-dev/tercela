@@ -3,7 +3,7 @@ import type { Seeder } from "./types";
 import { userSeeder } from "./users";
 import { channelSeeder } from "./channels";
 
-// Seeders são executados nesta ordem
+// Seeders run in this order
 export const seeders: Seeder[] = [
   userSeeder,
   channelSeeder,

@@ -17,8 +17,8 @@ whatsappWebhook.openapi(
     method: "get",
     path: "/",
     tags: ["Webhooks"],
-    summary: "Verificação do webhook WhatsApp",
-    description: "Endpoint de verificação usado pela Meta para validar o webhook",
+    summary: "WhatsApp webhook verification",
+    description: "Verification endpoint used by Meta to validate the webhook",
     request: {
       query: z.object({
         "hub.mode": z.string().openapi({ example: "subscribe" }),
@@ -27,8 +27,8 @@ whatsappWebhook.openapi(
       }),
     },
     responses: {
-      200: { description: "Challenge retornado com sucesso" },
-      403: { description: "Token inválido" },
+      200: { description: "Challenge returned successfully" },
+      403: { description: "Invalid token" },
     },
   }),
   (c) => {
@@ -50,8 +50,8 @@ whatsappWebhook.openapi(
     method: "post",
     path: "/",
     tags: ["Webhooks"],
-    summary: "Receber mensagem do WhatsApp",
-    description: "Endpoint que recebe notificações da WhatsApp Cloud API",
+    summary: "Receive WhatsApp message",
+    description: "Endpoint that receives notifications from WhatsApp Cloud API",
     request: {
       body: {
         content: { "application/json": { schema: z.object({}).passthrough() } },
@@ -59,7 +59,7 @@ whatsappWebhook.openapi(
     },
     responses: {
       200: {
-        description: "Processado",
+        description: "Processed",
         content: {
           "application/json": {
             schema: z.object({ status: z.string() }),

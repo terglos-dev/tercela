@@ -4,7 +4,7 @@ import { listMessages, sendOutboundMessage } from "../services/message";
 const messagesRouter = new OpenAPIHono();
 
 const IdParam = z.object({
-  id: z.string().openapi({ param: { name: "id", in: "path" }, description: "ID da conversa" }),
+  id: z.string().openapi({ param: { name: "id", in: "path" }, description: "Conversation ID" }),
 });
 
 const MessageSchema = z.object({
@@ -27,11 +27,11 @@ messagesRouter.openapi(
     method: "get",
     path: "/{id}/messages",
     tags: ["Messages"],
-    summary: "Listar mensagens da conversa",
+    summary: "List conversation messages",
     request: { params: IdParam },
     responses: {
       200: {
-        description: "Lista de mensagens",
+        description: "List of messages",
         content: { "application/json": { schema: z.array(MessageSchema) } },
       },
     },
@@ -48,7 +48,7 @@ const sendSchema = z.object({
   type: z
     .enum(["text", "image", "audio", "video", "document", "location", "template"])
     .default("text"),
-  content: z.string().min(1).openapi({ example: "Olá, como posso ajudar?" }),
+  content: z.string().min(1).openapi({ example: "Hello, how can I help you?" }),
 });
 
 messagesRouter.openapi(
@@ -56,19 +56,19 @@ messagesRouter.openapi(
     method: "post",
     path: "/{id}/messages",
     tags: ["Messages"],
-    summary: "Enviar mensagem",
-    description: "Envia uma mensagem outbound para o contato da conversa",
+    summary: "Send message",
+    description: "Send an outbound message to the conversation contact",
     request: {
       params: IdParam,
       body: { content: { "application/json": { schema: sendSchema } } },
     },
     responses: {
       201: {
-        description: "Mensagem enviada",
+        description: "Message sent",
         content: { "application/json": { schema: MessageSchema } },
       },
       400: {
-        description: "Input inválido",
+        description: "Invalid input",
         content: { "application/json": { schema: ErrorSchema } },
       },
     },

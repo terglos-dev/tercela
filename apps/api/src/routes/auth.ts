@@ -8,7 +8,7 @@ const loginRoute = createRoute({
   path: "/login",
   tags: ["Auth"],
   summary: "Login",
-  description: "Autentica um usuário e retorna um JWT",
+  description: "Authenticate a user and return a JWT",
   request: {
     body: {
       content: {
@@ -23,7 +23,7 @@ const loginRoute = createRoute({
   },
   responses: {
     200: {
-      description: "Login bem-sucedido",
+      description: "Login successful",
       content: {
         "application/json": {
           schema: z.object({
@@ -41,7 +41,7 @@ const loginRoute = createRoute({
       },
     },
     401: {
-      description: "Credenciais inválidas",
+      description: "Invalid credentials",
       content: {
         "application/json": {
           schema: z.object({ error: z.string() }),

@@ -25,7 +25,7 @@
               class="justify-start"
             >
               <UAvatar :alt="user?.name || 'U'" size="2xs" icon="i-lucide-user" />
-              <span v-if="!collapsed" class="truncate">{{ user?.name || 'Usuário' }}</span>
+              <span v-if="!collapsed" class="truncate">{{ user?.name || 'User' }}</span>
             </UButton>
           </UDropdownMenu>
         </div>
@@ -43,21 +43,21 @@ const { user, logout } = useAuth();
 
 const navItems: NavigationMenuItem[][] = [
   [
-    { label: "Conversas", icon: "i-lucide-message-square", to: "/conversations" },
-    { label: "Contatos", icon: "i-lucide-users", to: "/contacts" },
+    { label: "Conversations", icon: "i-lucide-message-square", to: "/conversations" },
+    { label: "Contacts", icon: "i-lucide-users", to: "/contacts" },
   ],
   [
-    { label: "Configurações", icon: "i-lucide-settings", to: "/settings" },
+    { label: "Settings", icon: "i-lucide-settings", to: "/settings" },
   ],
 ];
 
 const userMenuItems: DropdownMenuItem[][] = [
   [
-    { label: "Configurações", icon: "i-lucide-settings", to: "/settings" },
+    { label: "Settings", icon: "i-lucide-settings", to: "/settings" },
   ],
   [
     {
-      label: "Sair",
+      label: "Sign out",
       icon: "i-lucide-log-out",
       color: "error",
       onSelect: () => logout(),

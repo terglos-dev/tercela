@@ -26,10 +26,10 @@ usersRouter.openapi(
     method: "get",
     path: "/",
     tags: ["Users"],
-    summary: "Listar operadores",
+    summary: "List users",
     responses: {
       200: {
-        description: "Lista de operadores",
+        description: "List of users",
         content: { "application/json": { schema: z.array(UserSchema) } },
       },
     },
@@ -49,15 +49,15 @@ usersRouter.openapi(
     method: "get",
     path: "/{id}",
     tags: ["Users"],
-    summary: "Buscar operador por ID",
+    summary: "Get user by ID",
     request: { params: IdParam },
     responses: {
       200: {
-        description: "Operador encontrado",
+        description: "User found",
         content: { "application/json": { schema: UserSchema } },
       },
       404: {
-        description: "Operador não encontrado",
+        description: "User not found",
         content: { "application/json": { schema: ErrorSchema } },
       },
     },
@@ -76,9 +76,9 @@ usersRouter.openapi(
 
 // POST /
 const createSchema = z.object({
-  name: z.string().min(1).openapi({ example: "João Silva" }),
-  email: z.string().email().openapi({ example: "joao@empresa.com" }),
-  password: z.string().min(6).openapi({ example: "senha123" }),
+  name: z.string().min(1).openapi({ example: "John Doe" }),
+  email: z.string().email().openapi({ example: "john@company.com" }),
+  password: z.string().min(6).openapi({ example: "pass123" }),
   role: z.enum(["admin", "agent"]).default("agent"),
 });
 
@@ -87,17 +87,17 @@ usersRouter.openapi(
     method: "post",
     path: "/",
     tags: ["Users"],
-    summary: "Criar operador",
+    summary: "Create user",
     request: {
       body: { content: { "application/json": { schema: createSchema } } },
     },
     responses: {
       201: {
-        description: "Operador criado",
+        description: "User created",
         content: { "application/json": { schema: UserSchema } },
       },
       400: {
-        description: "Input inválido",
+        description: "Invalid input",
         content: { "application/json": { schema: ErrorSchema } },
       },
     },
@@ -121,18 +121,18 @@ usersRouter.openapi(
     method: "patch",
     path: "/{id}",
     tags: ["Users"],
-    summary: "Atualizar operador",
+    summary: "Update user",
     request: {
       params: IdParam,
       body: { content: { "application/json": { schema: updateSchema } } },
     },
     responses: {
       200: {
-        description: "Operador atualizado",
+        description: "User updated",
         content: { "application/json": { schema: UserSchema } },
       },
       404: {
-        description: "Operador não encontrado",
+        description: "User not found",
         content: { "application/json": { schema: ErrorSchema } },
       },
     },

@@ -38,10 +38,10 @@ conversationsRouter.openapi(
     method: "get",
     path: "/",
     tags: ["Conversations"],
-    summary: "Listar conversas",
+    summary: "List conversations",
     responses: {
       200: {
-        description: "Lista de conversas",
+        description: "List of conversations",
         content: { "application/json": { schema: z.array(ConversationSchema) } },
       },
     },
@@ -58,15 +58,15 @@ conversationsRouter.openapi(
     method: "get",
     path: "/{id}",
     tags: ["Conversations"],
-    summary: "Buscar conversa por ID",
+    summary: "Get conversation by ID",
     request: { params: IdParam },
     responses: {
       200: {
-        description: "Conversa encontrada",
+        description: "Conversation found",
         content: { "application/json": { schema: ConversationSchema } },
       },
       404: {
-        description: "Conversa não encontrada",
+        description: "Conversation not found",
         content: { "application/json": { schema: ErrorSchema } },
       },
     },
@@ -90,19 +90,19 @@ conversationsRouter.openapi(
     method: "patch",
     path: "/{id}",
     tags: ["Conversations"],
-    summary: "Atualizar conversa",
-    description: "Atualizar status ou atribuir operador",
+    summary: "Update conversation",
+    description: "Update status or assign agent",
     request: {
       params: IdParam,
       body: { content: { "application/json": { schema: updateSchema } } },
     },
     responses: {
       200: {
-        description: "Conversa atualizada",
+        description: "Conversation updated",
         content: { "application/json": { schema: ConversationSchema } },
       },
       404: {
-        description: "Conversa não encontrada",
+        description: "Conversation not found",
         content: { "application/json": { schema: ErrorSchema } },
       },
     },

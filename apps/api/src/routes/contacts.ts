@@ -28,10 +28,10 @@ contactsRouter.openapi(
     method: "get",
     path: "/",
     tags: ["Contacts"],
-    summary: "Listar contatos",
+    summary: "List contacts",
     responses: {
       200: {
-        description: "Lista de contatos",
+        description: "List of contacts",
         content: { "application/json": { schema: z.array(ContactSchema) } },
       },
     },
@@ -48,15 +48,15 @@ contactsRouter.openapi(
     method: "get",
     path: "/{id}",
     tags: ["Contacts"],
-    summary: "Buscar contato por ID",
+    summary: "Get contact by ID",
     request: { params: IdParam },
     responses: {
       200: {
-        description: "Contato encontrado",
+        description: "Contact found",
         content: { "application/json": { schema: ContactSchema } },
       },
       404: {
-        description: "Contato não encontrado",
+        description: "Contact not found",
         content: { "application/json": { schema: ErrorSchema } },
       },
     },
@@ -72,7 +72,7 @@ contactsRouter.openapi(
 // POST /
 const createSchema = z.object({
   externalId: z.string().openapi({ example: "5511999999999" }),
-  name: z.string().optional().openapi({ example: "João" }),
+  name: z.string().optional().openapi({ example: "John" }),
   phone: z.string().optional().openapi({ example: "+5511999999999" }),
   channelType: z.enum(["whatsapp", "webchat", "instagram"]),
   metadata: z.record(z.unknown()).optional(),
@@ -83,17 +83,17 @@ contactsRouter.openapi(
     method: "post",
     path: "/",
     tags: ["Contacts"],
-    summary: "Criar contato",
+    summary: "Create contact",
     request: {
       body: { content: { "application/json": { schema: createSchema } } },
     },
     responses: {
       201: {
-        description: "Contato criado",
+        description: "Contact created",
         content: { "application/json": { schema: ContactSchema } },
       },
       400: {
-        description: "Input inválido",
+        description: "Invalid input",
         content: { "application/json": { schema: ErrorSchema } },
       },
     },
@@ -126,18 +126,18 @@ contactsRouter.openapi(
     method: "patch",
     path: "/{id}",
     tags: ["Contacts"],
-    summary: "Atualizar contato",
+    summary: "Update contact",
     request: {
       params: IdParam,
       body: { content: { "application/json": { schema: updateSchema } } },
     },
     responses: {
       200: {
-        description: "Contato atualizado",
+        description: "Contact updated",
         content: { "application/json": { schema: ContactSchema } },
       },
       404: {
-        description: "Contato não encontrado",
+        description: "Contact not found",
         content: { "application/json": { schema: ErrorSchema } },
       },
     },
