@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel>
     <template #header>
-      <UDashboardNavbar :title="currentConversation?.contact?.name || 'Conversa'" icon="i-lucide-message-square">
+      <UDashboardNavbar :title="currentConversation?.contact?.name || 'Conversation'" icon="i-lucide-message-square">
         <template #right>
           <USelect
             :model-value="currentConversation?.status"
@@ -17,7 +17,7 @@
 
     <template #body>
       <div class="flex h-full">
-        <!-- Lista lateral -->
+        <!-- Sidebar list -->
         <div class="w-[360px] border-r border-[var(--ui-border)] flex flex-col">
           <div class="flex-1 overflow-y-auto">
             <NuxtLink
@@ -29,7 +29,7 @@
             >
               <UAvatar :alt="conv.contact?.name || '?'" size="sm" icon="i-lucide-user" />
               <div class="flex-1 min-w-0">
-                <div class="font-medium text-sm truncate">{{ conv.contact?.name || conv.contact?.phone || "Desconhecido" }}</div>
+                <div class="font-medium text-sm truncate">{{ conv.contact?.name || conv.contact?.phone || "Unknown" }}</div>
                 <div class="flex gap-1.5 mt-1">
                   <UBadge color="info" variant="subtle" size="xs">{{ conv.channel?.type }}</UBadge>
                 </div>
@@ -47,7 +47,7 @@
 
             <div v-else-if="messages.length === 0" class="flex flex-col items-center justify-center h-full gap-2 text-[var(--ui-text-muted)]">
               <UIcon name="i-lucide-message-circle" class="size-10" />
-              <span class="text-sm">Nenhuma mensagem ainda</span>
+              <span class="text-sm">No messages yet</span>
             </div>
 
             <template v-else>
@@ -76,7 +76,7 @@
           <div class="border-t border-[var(--ui-border)] p-3 flex gap-2">
             <UInput
               v-model="newMessage"
-              placeholder="Digite uma mensagem..."
+              placeholder="Type a message..."
               class="flex-1"
               :disabled="sending"
               @keydown.enter.exact.prevent="handleSend"
@@ -114,7 +114,7 @@ const currentConversation = computed(() =>
 );
 
 function formatTime(date: string) {
-  return new Date(date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return new Date(date).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 }
 
 async function handleSend() {
@@ -125,7 +125,7 @@ async function handleSend() {
     newMessage.value = "";
     scrollToBottom();
   } catch {
-    toast.add({ title: "Erro ao enviar mensagem", color: "error", icon: "i-lucide-alert-circle" });
+    toast.add({ title: "Failed to send message", color: "error", icon: "i-lucide-alert-circle" });
   } finally {
     sending.value = false;
   }
@@ -133,7 +133,7 @@ async function handleSend() {
 
 async function handleStatusChange(status: string) {
   await updateConversation(conversationId.value, { status });
-  toast.add({ title: `Conversa marcada como ${status}`, icon: "i-lucide-check", color: "success" });
+  toast.add({ title: `Conversation marked as ${status}`, icon: "i-lucide-check", color: "success" });
 }
 
 function scrollToBottom() {

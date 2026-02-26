@@ -1,7 +1,7 @@
 <template>
   <UDashboardPanel>
     <template #header>
-      <UDashboardNavbar title="Contatos" icon="i-lucide-users">
+      <UDashboardNavbar title="Contacts" icon="i-lucide-users">
         <template #right>
           <UColorModeButton />
         </template>
@@ -17,7 +17,7 @@
             </UBadge>
           </template>
           <template #createdAt-cell="{ row }">
-            {{ new Date(row.original.createdAt).toLocaleDateString("pt-BR") }}
+            {{ new Date(row.original.createdAt).toLocaleDateString("en-US") }}
           </template>
         </UTable>
 
@@ -27,7 +27,7 @@
 
         <div v-else class="flex flex-col items-center justify-center py-20 gap-2 text-[var(--ui-text-muted)]">
           <UIcon name="i-lucide-users" class="size-10" />
-          <span class="text-sm">Nenhum contato encontrado</span>
+          <span class="text-sm">No contacts found</span>
         </div>
       </div>
     </template>
@@ -42,10 +42,10 @@ const contacts = ref<any[]>([]);
 const loading = ref(true);
 
 const columns: TableColumn<any>[] = [
-  { accessorKey: "name", header: "Nome" },
-  { accessorKey: "phone", header: "Telefone" },
-  { accessorKey: "channelType", header: "Canal" },
-  { accessorKey: "createdAt", header: "Criado em" },
+  { accessorKey: "name", header: "Name" },
+  { accessorKey: "phone", header: "Phone" },
+  { accessorKey: "channelType", header: "Channel" },
+  { accessorKey: "createdAt", header: "Created at" },
 ];
 
 function channelIcon(type: string) {
