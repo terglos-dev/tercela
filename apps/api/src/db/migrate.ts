@@ -42,7 +42,26 @@ async function pushSchemaViaCli() {
   console.log("[DB] Schema push complete");
 }
 
+async function ensureSchemas(databaseUrl: string) {
+  const schemas = ["auth", "channels", "contacts", "inbox"];
+  const client = postgres(databaseUrl, { max: 1 });
+
+  try {
+    for (const schema of schemas) {
+      await client`SELECT pg_catalog.pg_namespace.nspname FROM pg_catalog.pg_namespace WHERE nspname = ${schema}`.then(
+        (rows) => {
+          if (rows.length === 0) return client.unsafe(`CREATE SCHEMA "${schema}"`);
+        }
+      );
+    }
+    console.log(`[DB] Schemas ensured: ${schemas.join(", ")}`);
+  } finally {
+    await client.end();
+  }
+}
+
 export async function autoMigrate(databaseUrl: string) {
   await ensureDatabase(databaseUrl);
+  await ensureSchemas(databaseUrl);
   await pushSchemaViaCli();
 }

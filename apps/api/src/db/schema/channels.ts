@@ -1,7 +1,8 @@
-import { boolean, jsonb, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { boolean, jsonb, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { generateId } from "@tercela/shared";
+import { channelsSchema } from "./schemas";
 
-export const channels = pgTable("channels", {
+export const channels = channelsSchema.table("channels", {
   id: text("id").primaryKey().$defaultFn(generateId),
   type: varchar("type", { length: 50 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),

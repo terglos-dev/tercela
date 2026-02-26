@@ -1,8 +1,9 @@
-import { pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { generateId } from "@tercela/shared";
 import { conversations } from "./conversations";
+import { inboxSchema } from "./schemas";
 
-export const messages = pgTable("messages", {
+export const messages = inboxSchema.table("messages", {
   id: text("id").primaryKey().$defaultFn(generateId),
   conversationId: text("conversation_id").notNull().references(() => conversations.id),
   direction: varchar("direction", { length: 20 }).notNull(),

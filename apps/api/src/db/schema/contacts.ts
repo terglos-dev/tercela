@@ -1,7 +1,8 @@
-import { jsonb, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { jsonb, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { generateId } from "@tercela/shared";
+import { contactsSchema } from "./schemas";
 
-export const contacts = pgTable("contacts", {
+export const contacts = contactsSchema.table("contacts", {
   id: text("id").primaryKey().$defaultFn(generateId),
   externalId: varchar("external_id", { length: 255 }).notNull(),
   name: varchar("name", { length: 255 }),

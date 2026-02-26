@@ -1,7 +1,8 @@
-import { pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { generateId } from "@tercela/shared";
+import { authSchema } from "./schemas";
 
-export const users = pgTable("users", {
+export const users = authSchema.table("users", {
   id: text("id").primaryKey().$defaultFn(generateId),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
