@@ -58,7 +58,7 @@ app.doc("/doc", {
   info: {
     title: "Tercela API",
     version: "0.1.0",
-    description: "API da plataforma omnichannel Tercela",
+    description: "Tercela omnichannel platform API",
   },
   servers: [{ url: "http://localhost:3333", description: "Local" }],
 });
@@ -67,7 +67,7 @@ app.doc("/doc", {
 app.get(
   "/reference",
   apiReference({
-    spec: { url: "/doc" },
+    url: "/doc",
     theme: "purple",
     pageTitle: "Tercela API Reference",
   }),

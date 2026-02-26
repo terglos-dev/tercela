@@ -15,7 +15,7 @@ const ContactSchema = z.object({
   name: z.string().nullable(),
   phone: z.string().nullable(),
   channelType: z.string(),
-  metadata: z.record(z.unknown()),
+  metadata: z.record(z.string(), z.unknown()),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -75,7 +75,7 @@ const createSchema = z.object({
   name: z.string().optional().openapi({ example: "John" }),
   phone: z.string().optional().openapi({ example: "+5511999999999" }),
   channelType: z.enum(["whatsapp", "webchat", "instagram"]),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 contactsRouter.openapi(
@@ -118,7 +118,7 @@ contactsRouter.openapi(
 const updateSchema = z.object({
   name: z.string().optional(),
   phone: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 contactsRouter.openapi(
