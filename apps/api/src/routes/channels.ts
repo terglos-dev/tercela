@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { db } from "../db";
-import { channels } from "../db/schema";
+import { channels, conversations, messages } from "../db/schema";
 import { env } from "../env";
 import { success, error } from "../utils/response";
 import { wrapSuccess, ErrorResponseSchema } from "../utils/openapi-schemas";
@@ -184,17 +184,17 @@ channelsRouter.openapi(
   },
 );
 
-// DELETE /:id (soft delete — sets isActive = false)
+// DELETE /:id (hard delete — removes from database)
 channelsRouter.openapi(
   createRoute({
     method: "delete",
     path: "/{id}",
     tags: ["Channels"],
-    summary: "Deactivate channel",
+    summary: "Delete channel",
     request: { params: IdParam },
     responses: {
       200: {
-        description: "Channel deactivated",
+        description: "Channel deleted",
         content: { "application/json": { schema: wrapSuccess(ChannelSchema) } },
       },
       404: {
@@ -205,13 +205,34 @@ channelsRouter.openapi(
   }),
   async (c) => {
     const { id } = c.req.valid("param");
-    const [channel] = await db
-      .update(channels)
-      .set({ isActive: false, updatedAt: new Date() })
-      .where(eq(channels.id, id))
-      .returning();
-    if (!channel) return error(c, "Channel not found", 404);
-    return success(c, serializeChannel(channel), 200);
+
+    const result = await db.transaction(async (tx) => {
+      // Find conversations belonging to this channel
+      const convos = await tx
+        .select({ id: conversations.id })
+        .from(conversations)
+        .where(eq(conversations.channelId, id));
+
+      // Delete messages for those conversations
+      if (convos.length > 0) {
+        const convoIds = convos.map((c) => c.id);
+        await tx.delete(messages).where(inArray(messages.conversationId, convoIds));
+      }
+
+      // Delete conversations
+      await tx.delete(conversations).where(eq(conversations.channelId, id));
+
+      // Delete the channel
+      const [channel] = await tx
+        .delete(channels)
+        .where(eq(channels.id, id))
+        .returning();
+
+      return channel;
+    });
+
+    if (!result) return error(c, "Channel not found", 404);
+    return success(c, serializeChannel(result), 200);
   },
 );
 

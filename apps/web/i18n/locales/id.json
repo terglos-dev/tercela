@@ -6,6 +6,7 @@
   "nav.contacts": "Kontak",
   "nav.settings": "Pengaturan",
   "nav.signOut": "Keluar",
+  "nav.collapse": "Ciutkan",
 
   "login.title": "Masuk ke Tercela",
   "login.subtitle": "Platform omnichannel open-source",
@@ -51,6 +52,12 @@
   "channels.create": "Buat",
   "channels.deactivate": "Nonaktifkan",
   "channels.deactivated": "Kanal dinonaktifkan",
+  "channels.activated": "Kanal diaktifkan",
+  "channels.delete": "Hapus",
+  "channels.deleteConfirm": "Apakah Anda yakin? Tindakan ini tidak dapat dibatalkan.",
+  "channels.deleted": "Kanal dihapus",
+  "channels.actions": "Tindakan",
+  "channels.cancel": "Batal",
   "channels.save": "Simpan",
   "channels.whatsapp.phoneNumberId": "ID Nomor Telepon",
   "channels.whatsapp.accessToken": "Token Akses",
@@ -69,6 +76,8 @@
   "channels.connectNumber": "Hubungkan nomor ini",
   "channels.phoneNumber": "Nomor Telepon",
   "channels.verifiedName": "Nama Terverifikasi",
+
+  "time.now": "baru saja",
 
   "settings.title": "Pengaturan",
   "settings.agents": "Agen",

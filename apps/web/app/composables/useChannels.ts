@@ -35,7 +35,14 @@ export function useChannels() {
 
     const body = await res.json().catch(() => null);
     if (!res.ok) throw new Error(body?.error?.message || "Request failed");
+    await fetchChannels();
     return body.data as ChannelListItem;
+  }
+
+  async function toggleChannel(id: string, isActive: boolean) {
+    const result = await updateChannel(id, { isActive });
+    await fetchChannels();
+    return result;
   }
 
   async function fetchMetaAccounts(accessToken: string) {
@@ -50,5 +57,5 @@ export function useChannels() {
     return await api.post<ChannelListItem>("/v1/channels/meta/connect", data);
   }
 
-  return { channels, loading, fetchChannels, createChannel, updateChannel, deleteChannel, fetchMetaAccounts, connectMeta };
+  return { channels, loading, fetchChannels, createChannel, updateChannel, deleteChannel, toggleChannel, fetchMetaAccounts, connectMeta };
 }

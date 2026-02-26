@@ -44,16 +44,31 @@
             </UBadge>
           </template>
           <template #isActive-cell="{ row }">
-            <UBadge
-              :color="row.original.isActive ? 'success' : 'neutral'"
-              variant="subtle"
-              size="xs"
-            >
-              {{ row.original.isActive ? $t('channels.active') : $t('channels.inactive') }}
-            </UBadge>
+            <div class="flex items-center gap-2" @click.stop>
+              <USwitch
+                :model-value="row.original.isActive"
+                :loading="togglingId === row.original.id"
+                size="sm"
+                @update:model-value="onToggle(row.original)"
+              />
+              <span class="text-xs" :class="row.original.isActive ? 'text-[var(--color-success)]' : 'text-[var(--ui-text-dimmed)]'">
+                {{ row.original.isActive ? $t('channels.active') : $t('channels.inactive') }}
+              </span>
+            </div>
           </template>
           <template #createdAt-cell="{ row }">
             {{ new Date(row.original.createdAt).toLocaleDateString(locale) }}
+          </template>
+          <template #actions-cell="{ row }">
+            <div class="flex items-center" @click.stop>
+              <UButton
+                icon="i-lucide-trash-2"
+                color="error"
+                variant="ghost"
+                size="xs"
+                @click="confirmDelete(row.original)"
+              />
+            </div>
           </template>
         </UTable>
 
@@ -74,6 +89,39 @@
           />
         </div>
       </div>
+
+      <!-- Delete confirmation modal -->
+      <UModal v-model:open="deleteModalOpen">
+        <template #content>
+          <div class="p-6 space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="flex items-center justify-center size-10 rounded-full bg-[var(--ui-bg-error)]/10">
+                <UIcon name="i-lucide-triangle-alert" class="size-5 text-[var(--color-error)]" />
+              </div>
+              <div>
+                <h3 class="text-base font-semibold">{{ $t('channels.delete') }}</h3>
+                <p class="text-sm text-[var(--ui-text-dimmed)]">{{ channelToDelete?.name }}</p>
+              </div>
+            </div>
+            <p class="text-sm text-[var(--ui-text-muted)]">{{ $t('channels.deleteConfirm') }}</p>
+            <div class="flex justify-end gap-2">
+              <UButton
+                :label="$t('channels.cancel')"
+                color="neutral"
+                variant="soft"
+                @click="deleteModalOpen = false"
+              />
+              <UButton
+                :label="$t('channels.delete')"
+                color="error"
+                icon="i-lucide-trash-2"
+                :loading="deleting"
+                @click="onDelete"
+              />
+            </div>
+          </div>
+        </template>
+      </UModal>
     </template>
   </UDashboardPanel>
 </template>
@@ -85,7 +133,13 @@ import { phoneWithFlag } from "~/utils/phone";
 
 const { t, locale } = useI18n();
 const router = useRouter();
-const { channels, loading, fetchChannels } = useChannels();
+const toast = useToast();
+const { channels, loading, fetchChannels, deleteChannel, toggleChannel } = useChannels();
+
+const togglingId = ref<string | null>(null);
+const deleting = ref(false);
+const deleteModalOpen = ref(false);
+const channelToDelete = ref<ChannelListItem | null>(null);
 
 const columns = computed<TableColumn<ChannelListItem>[]>(() => [
   { accessorKey: "name", header: t("channels.name") },
@@ -93,6 +147,7 @@ const columns = computed<TableColumn<ChannelListItem>[]>(() => [
   { accessorKey: "type", header: t("channels.type") },
   { accessorKey: "isActive", header: t("channels.status") },
   { accessorKey: "createdAt", header: t("channels.created") },
+  { id: "actions", header: t("channels.actions") },
 ]);
 
 function getDisplayPhone(ch: ChannelListItem): string {
@@ -111,6 +166,42 @@ function channelIcon(type: string) {
 
 function onRowClick(row: { original: ChannelListItem }) {
   router.push(`/channels/${row.original.id}`);
+}
+
+async function onToggle(ch: ChannelListItem) {
+  togglingId.value = ch.id;
+  try {
+    await toggleChannel(ch.id, !ch.isActive);
+    toast.add({
+      title: ch.isActive ? t("channels.deactivated") : t("channels.activated"),
+      color: "success",
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed";
+    toast.add({ title: message, color: "error" });
+  } finally {
+    togglingId.value = null;
+  }
+}
+
+function confirmDelete(ch: ChannelListItem) {
+  channelToDelete.value = ch;
+  deleteModalOpen.value = true;
+}
+
+async function onDelete() {
+  if (!channelToDelete.value) return;
+  deleting.value = true;
+  try {
+    await deleteChannel(channelToDelete.value.id);
+    toast.add({ title: t("channels.deleted"), color: "success" });
+    deleteModalOpen.value = false;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed";
+    toast.add({ title: message, color: "error" });
+  } finally {
+    deleting.value = false;
+  }
 }
 
 onMounted(() => fetchChannels());

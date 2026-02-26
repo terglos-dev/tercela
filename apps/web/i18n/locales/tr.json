@@ -6,6 +6,7 @@
   "nav.contacts": "Kişiler",
   "nav.settings": "Ayarlar",
   "nav.signOut": "Çıkış yap",
+  "nav.collapse": "Daralt",
 
   "login.title": "Tercela'ya giriş yap",
   "login.subtitle": "Açık kaynak çok kanallı platform",
@@ -51,6 +52,12 @@
   "channels.create": "Oluştur",
   "channels.deactivate": "Devre Dışı Bırak",
   "channels.deactivated": "Kanal devre dışı bırakıldı",
+  "channels.activated": "Kanal etkinleştirildi",
+  "channels.delete": "Sil",
+  "channels.deleteConfirm": "Emin misiniz? Bu işlem geri alınamaz.",
+  "channels.deleted": "Kanal silindi",
+  "channels.actions": "İşlemler",
+  "channels.cancel": "İptal",
   "channels.save": "Kaydet",
   "channels.whatsapp.phoneNumberId": "Telefon Numarası ID",
   "channels.whatsapp.accessToken": "Erişim Jetonu",
@@ -69,6 +76,8 @@
   "channels.connectNumber": "Bu numarayı bağla",
   "channels.phoneNumber": "Telefon Numarası",
   "channels.verifiedName": "Doğrulanmış Ad",
+
+  "time.now": "şimdi",
 
   "settings.title": "Ayarlar",
   "settings.agents": "Temsilciler",

@@ -1,10 +1,25 @@
 <template>
-  <UDashboardGroup>
-    <UDashboardSidebar collapsible :default-size="15">
-      <template #header="{ collapsed }">
-        <div class="flex items-center gap-2.5 px-3 py-4">
-          <UIcon name="i-lucide-radio" class="text-primary size-5 shrink-0" />
-          <span v-if="!collapsed" class="font-semibold tracking-tight text-[var(--ui-text-highlighted)]">Tercela</span>
+  <UDashboardGroup storage="cookie" storage-key="dashboard" :persistent="true">
+    <UDashboardSidebar
+      id="sidebar"
+      collapsible
+      resizable
+      :default-size="15"
+      :collapsed-size="0"
+    >
+      <template #header="{ collapsed, collapse }">
+        <div class="flex items-center w-full" :class="collapsed ? 'justify-center' : 'justify-between'">
+          <div class="flex items-center gap-2.5">
+            <UIcon name="i-lucide-radio" class="text-primary size-5 shrink-0" />
+            <span v-if="!collapsed" class="font-semibold tracking-tight text-[var(--ui-text-highlighted)]">Tercela</span>
+          </div>
+          <UButton
+            :icon="collapsed ? 'i-lucide-chevrons-right' : 'i-lucide-chevrons-left'"
+            variant="ghost"
+            color="neutral"
+            size="xs"
+            @click="collapse(!collapsed)"
+          />
         </div>
       </template>
 
@@ -12,6 +27,7 @@
         :items="navItems"
         orientation="vertical"
         highlight
+        :ui="{ list: 'gap-1.5 p-2', link: 'py-2.5', linkLeadingIcon: 'size-5' }"
       />
 
       <template #footer="{ collapsed }">
@@ -24,7 +40,7 @@
               :square="collapsed"
               class="justify-start"
             >
-              <UAvatar :alt="user?.name || 'U'" size="2xs" icon="i-lucide-user" />
+              <UAvatar :alt="user?.name || 'U'" size="2xs" :color="avatarColor(user?.name || 'U')" />
               <span v-if="!collapsed" class="truncate text-sm">{{ user?.name || 'User' }}</span>
             </UButton>
           </UDropdownMenu>
@@ -38,6 +54,7 @@
 
 <script setup lang="ts">
 import type { NavigationMenuItem, DropdownMenuItem } from "@nuxt/ui";
+import { avatarColor } from "~/utils/avatar";
 
 const { t } = useI18n();
 const { user, logout } = useAuth();

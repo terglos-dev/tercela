@@ -6,6 +6,7 @@
   "nav.contacts": "جهات الاتصال",
   "nav.settings": "الإعدادات",
   "nav.signOut": "تسجيل الخروج",
+  "nav.collapse": "طي",
 
   "login.title": "تسجيل الدخول إلى Tercela",
   "login.subtitle": "منصة مفتوحة المصدر متعددة القنوات",
@@ -51,6 +52,12 @@
   "channels.create": "إنشاء",
   "channels.deactivate": "تعطيل",
   "channels.deactivated": "تم تعطيل القناة",
+  "channels.activated": "تم تفعيل القناة",
+  "channels.delete": "حذف",
+  "channels.deleteConfirm": "هل أنت متأكد؟ لا يمكن التراجع عن هذا الإجراء.",
+  "channels.deleted": "تم حذف القناة",
+  "channels.actions": "إجراءات",
+  "channels.cancel": "إلغاء",
   "channels.save": "حفظ",
   "channels.whatsapp.phoneNumberId": "معرف رقم الهاتف",
   "channels.whatsapp.accessToken": "رمز الوصول",
@@ -69,6 +76,8 @@
   "channels.connectNumber": "ربط هذا الرقم",
   "channels.phoneNumber": "رقم الهاتف",
   "channels.verifiedName": "الاسم الموثق",
+
+  "time.now": "الآن",
 
   "settings.title": "الإعدادات",
   "settings.agents": "الوكلاء",

@@ -66,12 +66,11 @@
 
           <div class="flex justify-between">
             <UButton
-              :label="$t('channels.deactivate')"
-              icon="i-lucide-power-off"
+              :label="$t('channels.delete')"
+              icon="i-lucide-trash-2"
               color="error"
               variant="soft"
-              :loading="deactivating"
-              @click="onDeactivate"
+              @click="deleteModalOpen = true"
             />
             <UButton
               type="submit"
@@ -83,6 +82,39 @@
           </div>
         </form>
       </div>
+
+      <!-- Delete confirmation modal -->
+      <UModal v-model:open="deleteModalOpen">
+        <template #content>
+          <div class="p-6 space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="flex items-center justify-center size-10 rounded-full bg-[var(--ui-bg-error)]/10">
+                <UIcon name="i-lucide-triangle-alert" class="size-5 text-[var(--color-error)]" />
+              </div>
+              <div>
+                <h3 class="text-base font-semibold">{{ $t('channels.delete') }}</h3>
+                <p class="text-sm text-[var(--ui-text-dimmed)]">{{ channel?.name }}</p>
+              </div>
+            </div>
+            <p class="text-sm text-[var(--ui-text-muted)]">{{ $t('channels.deleteConfirm') }}</p>
+            <div class="flex justify-end gap-2">
+              <UButton
+                :label="$t('channels.cancel')"
+                color="neutral"
+                variant="soft"
+                @click="deleteModalOpen = false"
+              />
+              <UButton
+                :label="$t('channels.delete')"
+                color="error"
+                icon="i-lucide-trash-2"
+                :loading="deleting"
+                @click="onDelete"
+              />
+            </div>
+          </div>
+        </template>
+      </UModal>
     </template>
   </UDashboardPanel>
 </template>
@@ -102,7 +134,8 @@ const channelId = route.params.id as string;
 const channel = ref<ChannelListItem | null>(null);
 const loading = ref(true);
 const saving = ref(false);
-const deactivating = ref(false);
+const deleting = ref(false);
+const deleteModalOpen = ref(false);
 
 const form = reactive({
   name: "",
@@ -148,17 +181,17 @@ async function onSave() {
   }
 }
 
-async function onDeactivate() {
-  deactivating.value = true;
+async function onDelete() {
+  deleting.value = true;
   try {
     await deleteChannel(channelId);
-    toast.add({ title: t("channels.deactivated"), color: "success" });
+    toast.add({ title: t("channels.deleted"), color: "success" });
     router.push("/channels");
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to deactivate";
+    const message = err instanceof Error ? err.message : "Failed to delete";
     toast.add({ title: message, color: "error" });
   } finally {
-    deactivating.value = false;
+    deleting.value = false;
   }
 }
 </script>

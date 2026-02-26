@@ -38,12 +38,10 @@ export function useMessages() {
   }
 
   async function sendMessage(conversationId: string, content: string, type: string = "text") {
-    const msg = await api.post<Serialized<Message>>(`/v1/conversations/${conversationId}/messages`, {
+    return await api.post<Serialized<Message>>(`/v1/conversations/${conversationId}/messages`, {
       content,
       type,
     });
-    messages.value.push(msg);
-    return msg;
   }
 
   return { messages, loading, loadingMore, hasMore, fetchMessages, loadMore, sendMessage };

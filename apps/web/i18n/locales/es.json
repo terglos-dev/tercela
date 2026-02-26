@@ -6,6 +6,7 @@
   "nav.contacts": "Contactos",
   "nav.settings": "Configuración",
   "nav.signOut": "Cerrar sesión",
+  "nav.collapse": "Contraer",
 
   "login.title": "Iniciar sesión en Tercela",
   "login.subtitle": "Plataforma omnicanal de código abierto",
@@ -51,6 +52,12 @@
   "channels.create": "Crear",
   "channels.deactivate": "Desactivar",
   "channels.deactivated": "Canal desactivado",
+  "channels.activated": "Canal activado",
+  "channels.delete": "Eliminar",
+  "channels.deleteConfirm": "¿Estás seguro? Esta acción no se puede deshacer.",
+  "channels.deleted": "Canal eliminado",
+  "channels.actions": "Acciones",
+  "channels.cancel": "Cancelar",
   "channels.save": "Guardar",
   "channels.whatsapp.phoneNumberId": "ID del Número de Teléfono",
   "channels.whatsapp.accessToken": "Token de Acceso",
@@ -69,6 +76,8 @@
   "channels.connectNumber": "Conectar este número",
   "channels.phoneNumber": "Número de Teléfono",
   "channels.verifiedName": "Nombre Verificado",
+
+  "time.now": "ahora",
 
   "settings.title": "Configuración",
   "settings.agents": "Agentes",

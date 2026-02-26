@@ -6,6 +6,7 @@
   "nav.contacts": "Contacts",
   "nav.settings": "Settings",
   "nav.signOut": "Sign out",
+  "nav.collapse": "Collapse",
 
   "login.title": "Sign in to Tercela",
   "login.subtitle": "Open-source omnichannel platform",
@@ -51,6 +52,12 @@
   "channels.create": "Create",
   "channels.deactivate": "Deactivate",
   "channels.deactivated": "Channel deactivated",
+  "channels.activated": "Channel activated",
+  "channels.delete": "Delete",
+  "channels.deleteConfirm": "Are you sure? This action cannot be undone.",
+  "channels.deleted": "Channel deleted",
+  "channels.actions": "Actions",
+  "channels.cancel": "Cancel",
   "channels.save": "Save",
   "channels.whatsapp.phoneNumberId": "Phone Number ID",
   "channels.whatsapp.accessToken": "Access Token",
@@ -69,6 +76,8 @@
   "channels.connectNumber": "Connect this number",
   "channels.phoneNumber": "Phone Number",
   "channels.verifiedName": "Verified Name",
+
+  "time.now": "now",
 
   "settings.title": "Settings",
   "settings.agents": "Agents",

@@ -6,6 +6,7 @@
   "nav.contacts": "संपर्क",
   "nav.settings": "सेटिंग्स",
   "nav.signOut": "लॉग आउट",
+  "nav.collapse": "छोटा करें",
 
   "login.title": "Tercela में साइन इन करें",
   "login.subtitle": "ओपन-सोर्स ऑम्नीचैनल प्लेटफ़ॉर्म",
@@ -51,6 +52,12 @@
   "channels.create": "बनाएं",
   "channels.deactivate": "निष्क्रिय करें",
   "channels.deactivated": "चैनल निष्क्रिय किया गया",
+  "channels.activated": "चैनल सक्रिय किया गया",
+  "channels.delete": "हटाएं",
+  "channels.deleteConfirm": "क्या आप निश्चित हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",
+  "channels.deleted": "चैनल हटाया गया",
+  "channels.actions": "कार्रवाई",
+  "channels.cancel": "रद्द करें",
   "channels.save": "सेव करें",
   "channels.whatsapp.phoneNumberId": "फ़ोन नंबर ID",
   "channels.whatsapp.accessToken": "एक्सेस टोकन",
@@ -69,6 +76,8 @@
   "channels.connectNumber": "यह नंबर कनेक्ट करें",
   "channels.phoneNumber": "फ़ोन नंबर",
   "channels.verifiedName": "सत्यापित नाम",
+
+  "time.now": "अभी",
 
   "settings.title": "सेटिंग्स",
   "settings.agents": "एजेंट",
