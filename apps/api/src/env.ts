@@ -9,6 +9,8 @@ const envSchema = z.object({
   WHATSAPP_PHONE_NUMBER_ID: z.string().default(""),
   WHATSAPP_APP_SECRET: z.string().default(""),
   WHATSAPP_BUSINESS_ACCOUNT_ID: z.string().default(""),
+  META_APP_ID: z.string().default(""),
+  META_APP_SECRET: z.string().default(""),
 });
 
 export const env = envSchema.parse(process.env);

@@ -38,5 +38,17 @@ export function useChannels() {
     return body.data as ChannelListItem;
   }
 
-  return { channels, loading, fetchChannels, createChannel, updateChannel, deleteChannel };
+  async function fetchMetaAccounts(accessToken: string) {
+    return await api.post<{
+      id: string;
+      name: string;
+      phone_numbers: { id: string; display_phone_number: string; verified_name: string; quality_rating?: string }[];
+    }[]>("/v1/channels/meta/accounts", { accessToken });
+  }
+
+  async function connectMeta(data: { accessToken: string; phoneNumberId: string; wabaId: string; name: string }) {
+    return await api.post<ChannelListItem>("/v1/channels/meta/connect", data);
+  }
+
+  return { channels, loading, fetchChannels, createChannel, updateChannel, deleteChannel, fetchMetaAccounts, connectMeta };
 }

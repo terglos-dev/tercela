@@ -30,13 +30,34 @@ async function verifySignature(body: string, signature: string | null, appSecret
 // Webhook verification (GET)
 // Uses raw query params because Meta sends dot-notation keys (hub.mode)
 // which Hono/Zod interprets as nested objects, breaking validation.
-whatsappWebhook.get("/", (c) => {
+// Supports multi-channel: checks verifyToken from DB channels + global env fallback.
+whatsappWebhook.get("/", async (c) => {
   const url = new URL(c.req.url);
   const mode = url.searchParams.get("hub.mode");
   const token = url.searchParams.get("hub.verify_token");
   const challenge = url.searchParams.get("hub.challenge");
 
-  if (mode === "subscribe" && token === env.WHATSAPP_VERIFY_TOKEN) {
+  if (mode !== "subscribe" || !token) {
+    return c.text("Forbidden", 403);
+  }
+
+  // Check global env token first (backwards compat)
+  if (token === env.WHATSAPP_VERIFY_TOKEN) {
+    return c.text(challenge ?? "", 200);
+  }
+
+  // Check per-channel verifyToken in DB
+  const [match] = await db
+    .select()
+    .from(channels)
+    .where(and(
+      eq(channels.type, "whatsapp"),
+      eq(channels.isActive, true),
+      sql`config->>'verifyToken' = ${token}`,
+    ))
+    .limit(1);
+
+  if (match) {
     return c.text(challenge ?? "", 200);
   }
 

@@ -11,6 +11,7 @@ export default defineNuxtConfig({
     public: {
       apiBase: "http://localhost:3333",
       wsUrl: "ws://localhost:3333/ws",
+      facebookAppId: "",
     },
   },
 
