@@ -61,7 +61,7 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center justify-between gap-2">
                     <span class="font-medium text-sm truncate">{{ conv.contact?.name || conv.contact?.phone || $t("conversations.unknown") }}</span>
-                    <span class="text-[10px] text-[var(--ui-text-dimmed)] shrink-0">{{ timeAgo(conv.lastMessageAt || conv.createdAt) }}</span>
+                    <span class="text-[10px] text-[var(--ui-text-dimmed)] shrink-0">{{ timeAgo(conv.lastMessageAt || conv.createdAt, locale) }}</span>
                   </div>
                   <div class="flex items-center justify-between gap-2 mt-1">
                     <span v-if="conv.contact?.phone && conv.contact?.name" class="text-xs text-[var(--ui-text-dimmed)] truncate">{{ conv.contact.phone }}</span>
@@ -86,8 +86,9 @@
 
 <script setup lang="ts">
 import { avatarColor } from "~/utils/avatar";
+import { timeAgo } from "~/utils/time";
 
-const { t, locale } = useI18n();
+const { locale } = useI18n();
 const { conversations, loading, fetchConversations } = useConversations();
 const { on, subscribe } = useWebSocket();
 const panelCollapsed = useCookie<boolean>("conv_panel_collapsed", { default: () => false });
@@ -96,19 +97,6 @@ function statusColor(status?: string) {
   if (status === "open") return "success" as const;
   if (status === "pending") return "warning" as const;
   return "neutral" as const;
-}
-
-function timeAgo(date: string) {
-  const now = Date.now();
-  const diff = now - new Date(date).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return t("time.now");
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d`;
-  return new Date(date).toLocaleDateString(locale.value, { day: "numeric", month: "short" });
 }
 
 onMounted(() => {

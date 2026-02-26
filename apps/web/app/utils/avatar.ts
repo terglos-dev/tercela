@@ -5,7 +5,8 @@ const colors = [
 ] as const;
 
 /** Returns a consistent color based on a string (name/id) */
-export function avatarColor(value: string): typeof colors[number] {
+export function avatarColor(value?: string | null): typeof colors[number] {
+  if (!value) return colors[0];
   let hash = 0;
   for (let i = 0; i < value.length; i++) {
     hash = value.charCodeAt(i) + ((hash << 5) - hash);
