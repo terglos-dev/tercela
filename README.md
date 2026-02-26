@@ -18,7 +18,7 @@ Open-source omnichannel platform for customer communication. Connect channels li
 | Layer | Technology |
 |-------|-----------|
 | Backend | [Hono](https://hono.dev) + [Bun](https://bun.sh) |
-| Frontend | [Nuxt 3](https://nuxt.com) + [Nuxt UI](https://ui.nuxt.com) |
+| Frontend | [Nuxt 4](https://nuxt.com) + [Nuxt UI](https://ui.nuxt.com) |
 | Database | PostgreSQL + [Drizzle ORM](https://orm.drizzle.team) |
 | Real-time | Bun native WebSocket |
 | Auth | JWT (HS256) |
@@ -77,7 +77,7 @@ tercela/
 │   │   │   ├── middleware/    # Auth & error handling
 │   │   │   └── ws/           # WebSocket handlers
 │   │   └── Dockerfile
-│   └── web/            # Nuxt 3 frontend (port 3000)
+│   └── web/            # Nuxt 4 frontend (port 3000)
 │       ├── app/
 │       │   ├── pages/        # Application routes
 │       │   ├── components/   # Vue components
