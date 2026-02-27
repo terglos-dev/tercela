@@ -5,7 +5,7 @@ import { logger } from "hono/logger";
 import { createBunWebSocket } from "hono/bun";
 import { verify } from "hono/jwt";
 import { errorHandler } from "./middleware/error-handler";
-import { authMiddleware } from "./middleware/auth";
+import { authMiddleware, activeUserMiddleware } from "./middleware/auth";
 import { rateLimit } from "./middleware/rate-limit";
 import { auth } from "./routes/auth";
 import { contactsRouter } from "./routes/contacts";
@@ -77,11 +77,11 @@ app.get(
 );
 
 // Protected routes
-app.use("/v1/channels/*", authMiddleware);
-app.use("/v1/contacts/*", authMiddleware);
-app.use("/v1/conversations/*", authMiddleware);
-app.use("/v1/users/*", authMiddleware);
-app.use("/v1/settings/*", authMiddleware);
+app.use("/v1/channels/*", authMiddleware, activeUserMiddleware);
+app.use("/v1/contacts/*", authMiddleware, activeUserMiddleware);
+app.use("/v1/conversations/*", authMiddleware, activeUserMiddleware);
+app.use("/v1/users/*", authMiddleware, activeUserMiddleware);
+app.use("/v1/settings/*", authMiddleware, activeUserMiddleware);
 app.route("/v1/channels", channelsRouter);
 app.route("/v1/channels", templatesRouter);
 app.route("/v1/settings", settingsRouter);

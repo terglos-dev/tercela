@@ -20,5 +20,24 @@ export function useUsers() {
     return user;
   }
 
-  return { users, loading, fetchUsers, createUser };
+  async function blockUser(id: string) {
+    const user = await api.post<UserListItem>(`/v1/users/${id}/block`, {});
+    const idx = users.value.findIndex((u) => u.id === id);
+    if (idx !== -1) users.value[idx] = user;
+    return user;
+  }
+
+  async function activateUser(id: string) {
+    const user = await api.post<UserListItem>(`/v1/users/${id}/activate`, {});
+    const idx = users.value.findIndex((u) => u.id === id);
+    if (idx !== -1) users.value[idx] = user;
+    return user;
+  }
+
+  async function deleteUser(id: string) {
+    await api.delete(`/v1/users/${id}`);
+    users.value = users.value.filter((u) => u.id !== id);
+  }
+
+  return { users, loading, fetchUsers, createUser, blockUser, activateUser, deleteUser };
 }

@@ -27,6 +27,12 @@ export class ExternalAPIError extends AppError {
   }
 }
 
+export class ForbiddenError extends AppError {
+  constructor(message: string = "Forbidden") {
+    super(message, 403, "FORBIDDEN");
+  }
+}
+
 export class StorageError extends AppError {
   constructor(message: string) {
     super(message, 400, "STORAGE_ERROR");

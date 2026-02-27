@@ -13,6 +13,8 @@ export async function login(email: string, password: string) {
   const valid = await Bun.password.verify(password, user.passwordHash);
   if (!valid) return null;
 
+  if (user.status === "blocked") return null;
+
   const token = await sign(
     { sub: user.id, role: user.role, exp: Math.floor(Date.now() / 1000) + 86400 },
     env.JWT_SECRET
@@ -25,6 +27,7 @@ export async function login(email: string, password: string) {
       name: user.name,
       email: user.email,
       role: user.role,
+      status: user.status,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     },
