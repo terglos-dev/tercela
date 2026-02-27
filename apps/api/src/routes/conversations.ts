@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { listConversations, getConversation, updateConversation } from "../services/conversation";
-import { success, error } from "../utils/response";
-import { wrapSuccess, ErrorResponseSchema } from "../utils/openapi-schemas";
+import { success, successWithMeta, error } from "../utils/response";
+import { wrapSuccess, wrapPaginated, ErrorResponseSchema } from "../utils/openapi-schemas";
 
 const conversationsRouter = new OpenAPIHono();
 
@@ -41,16 +41,28 @@ conversationsRouter.openapi(
     path: "/",
     tags: ["Conversations"],
     summary: "List conversations",
+    request: {
+      query: z.object({
+        limit: z.coerce.number().min(1).max(100).default(50).optional(),
+        offset: z.coerce.number().min(0).default(0).optional(),
+      }),
+    },
     responses: {
       200: {
-        description: "List of conversations",
-        content: { "application/json": { schema: wrapSuccess(z.array(ConversationSchema)) } },
+        description: "Paginated list of conversations",
+        content: { "application/json": { schema: wrapPaginated(ConversationSchema) } },
       },
     },
   }),
   async (c) => {
-    const result = await listConversations();
-    return success(c, result as unknown as ConversationResponse[], 200);
+    const { limit, offset } = c.req.valid("query");
+    const result = await listConversations({ limit, offset });
+    return successWithMeta(
+      c,
+      result.data as unknown as ConversationResponse[],
+      { hasMore: result.hasMore, nextCursor: result.hasMore ? String(result.offset + result.limit) : null },
+      200,
+    );
   },
 );
 

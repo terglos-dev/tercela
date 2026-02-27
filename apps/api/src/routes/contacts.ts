@@ -1,10 +1,8 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { Serialized, Contact } from "@tercela/shared";
-import { listContacts, getContact, updateContact } from "../services/contact";
-import { db } from "../db";
-import { contacts } from "../db/schema";
-import { success, error } from "../utils/response";
-import { wrapSuccess, ErrorResponseSchema } from "../utils/openapi-schemas";
+import { listContacts, getContact, updateContact, createContact } from "../services/contact";
+import { success, successWithMeta, error } from "../utils/response";
+import { wrapSuccess, wrapPaginated, ErrorResponseSchema } from "../utils/openapi-schemas";
 
 type ContactResponse = Serialized<Contact>;
 
@@ -32,16 +30,28 @@ contactsRouter.openapi(
     path: "/",
     tags: ["Contacts"],
     summary: "List contacts",
+    request: {
+      query: z.object({
+        limit: z.coerce.number().min(1).max(100).default(50).optional(),
+        offset: z.coerce.number().min(0).default(0).optional(),
+      }),
+    },
     responses: {
       200: {
-        description: "List of contacts",
-        content: { "application/json": { schema: wrapSuccess(z.array(ContactSchema)) } },
+        description: "Paginated list of contacts",
+        content: { "application/json": { schema: wrapPaginated(ContactSchema) } },
       },
     },
   }),
   async (c) => {
-    const result = await listContacts();
-    return success(c, result as unknown as ContactResponse[], 200);
+    const { limit, offset } = c.req.valid("query");
+    const result = await listContacts({ limit, offset });
+    return successWithMeta(
+      c,
+      result.data as unknown as ContactResponse[],
+      { hasMore: result.hasMore, nextCursor: result.hasMore ? String(result.offset + result.limit) : null },
+      200,
+    );
   },
 );
 
@@ -103,16 +113,13 @@ contactsRouter.openapi(
   }),
   async (c) => {
     const data = c.req.valid("json");
-    const [contact] = await db
-      .insert(contacts)
-      .values({
-        externalId: data.externalId,
-        name: data.name ?? null,
-        phone: data.phone ?? null,
-        channelType: data.channelType,
-        metadata: data.metadata ?? {},
-      })
-      .returning();
+    const contact = await createContact({
+      externalId: data.externalId,
+      name: data.name,
+      phone: data.phone,
+      channelType: data.channelType,
+      metadata: data.metadata,
+    });
     return success(c, contact as unknown as ContactResponse, 201);
   },
 );

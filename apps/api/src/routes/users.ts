@@ -1,10 +1,8 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { eq } from "drizzle-orm";
-import { db } from "../db";
-import { users } from "../db/schema";
 import { createUser } from "../services/auth";
-import { success, error } from "../utils/response";
-import { wrapSuccess, ErrorResponseSchema } from "../utils/openapi-schemas";
+import { listUsers, getUser, updateUser } from "../services/user";
+import { success, successWithMeta, error } from "../utils/response";
+import { wrapSuccess, wrapPaginated, ErrorResponseSchema } from "../utils/openapi-schemas";
 
 const usersRouter = new OpenAPIHono();
 
@@ -29,19 +27,28 @@ usersRouter.openapi(
     path: "/",
     tags: ["Users"],
     summary: "List users",
+    request: {
+      query: z.object({
+        limit: z.coerce.number().min(1).max(100).default(50).optional(),
+        offset: z.coerce.number().min(0).default(0).optional(),
+      }),
+    },
     responses: {
       200: {
-        description: "List of users",
-        content: { "application/json": { schema: wrapSuccess(z.array(UserSchema)) } },
+        description: "Paginated list of users",
+        content: { "application/json": { schema: wrapPaginated(UserSchema) } },
       },
     },
   }),
   async (c) => {
-    const result = await db
-      .select({ id: users.id, name: users.name, email: users.email, role: users.role, createdAt: users.createdAt })
-      .from(users)
-      .orderBy(users.createdAt);
-    return success(c, result as unknown as UserResponse[], 200);
+    const { limit, offset } = c.req.valid("query");
+    const result = await listUsers({ limit, offset });
+    return successWithMeta(
+      c,
+      result.data as unknown as UserResponse[],
+      { hasMore: result.hasMore, nextCursor: result.hasMore ? String(result.offset + result.limit) : null },
+      200,
+    );
   },
 );
 
@@ -66,11 +73,7 @@ usersRouter.openapi(
   }),
   async (c) => {
     const { id } = c.req.valid("param");
-    const [user] = await db
-      .select({ id: users.id, name: users.name, email: users.email, role: users.role, createdAt: users.createdAt })
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+    const user = await getUser(id);
     if (!user) return error(c, "User not found", 404);
     return success(c, user as unknown as UserResponse, 200);
   },
@@ -142,13 +145,9 @@ usersRouter.openapi(
   async (c) => {
     const { id } = c.req.valid("param");
     const data = c.req.valid("json");
-    const [user] = await db
-      .update(users)
-      .set({ ...data, updatedAt: new Date() })
-      .where(eq(users.id, id))
-      .returning();
+    const user = await updateUser(id, data);
     if (!user) return error(c, "User not found", 404);
-    return success(c, { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt } as unknown as UserResponse, 200);
+    return success(c, user as unknown as UserResponse, 200);
   },
 );
 

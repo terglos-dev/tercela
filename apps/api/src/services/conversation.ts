@@ -3,47 +3,61 @@ import { db } from "../db";
 import { conversations, contacts, channels, users, messages } from "../db/schema";
 
 export async function findOrCreateConversation(contactId: string, channelId: string) {
-  const [existing] = await db
-    .select()
-    .from(conversations)
-    .where(eq(conversations.contactId, contactId))
-    .orderBy(desc(conversations.createdAt))
-    .limit(1);
+  return db.transaction(async (tx) => {
+    const [existing] = await tx
+      .select()
+      .from(conversations)
+      .where(eq(conversations.contactId, contactId))
+      .orderBy(desc(conversations.createdAt))
+      .limit(1);
 
-  if (existing && existing.status !== "closed") return existing;
+    if (existing && existing.status !== "closed") return existing;
 
-  const [conversation] = await db
-    .insert(conversations)
-    .values({ contactId, channelId, status: "open" })
-    .returning();
+    const [conversation] = await tx
+      .insert(conversations)
+      .values({ contactId, channelId, status: "open" })
+      .returning();
 
-  return conversation;
+    return conversation;
+  });
 }
 
-export async function listConversations() {
-  return db
-    .select({
-      id: conversations.id,
-      status: conversations.status,
-      lastMessageAt: conversations.lastMessageAt,
-      createdAt: conversations.createdAt,
-      assignedTo: conversations.assignedTo,
-      contact: {
-        id: contacts.id,
-        name: contacts.name,
-        phone: contacts.phone,
-        channelType: contacts.channelType,
-      },
-      channel: {
-        id: channels.id,
-        name: channels.name,
-        type: channels.type,
-      },
-    })
+const conversationSelect = {
+  id: conversations.id,
+  status: conversations.status,
+  lastMessageAt: conversations.lastMessageAt,
+  createdAt: conversations.createdAt,
+  assignedTo: conversations.assignedTo,
+  contact: {
+    id: contacts.id,
+    name: contacts.name,
+    phone: contacts.phone,
+    channelType: contacts.channelType,
+  },
+  channel: {
+    id: channels.id,
+    name: channels.name,
+    type: channels.type,
+  },
+};
+
+export async function listConversations(opts: { limit?: number; offset?: number } = {}) {
+  const limit = Math.min(Math.max(opts.limit ?? 50, 1), 100);
+  const offset = opts.offset ?? 0;
+
+  const result = await db
+    .select(conversationSelect)
     .from(conversations)
     .leftJoin(contacts, eq(conversations.contactId, contacts.id))
     .leftJoin(channels, eq(conversations.channelId, channels.id))
-    .orderBy(desc(conversations.lastMessageAt));
+    .orderBy(desc(conversations.lastMessageAt))
+    .limit(limit + 1)
+    .offset(offset);
+
+  const hasMore = result.length > limit;
+  if (hasMore) result.pop();
+
+  return { data: result, hasMore, offset, limit };
 }
 
 export async function getConversation(id: string) {

@@ -1,4 +1,4 @@
-import { jsonb, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { jsonb, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
 import { generateId } from "@tercela/shared";
 import { contactsSchema } from "./schemas";
 
@@ -11,4 +11,6 @@ export const contacts = contactsSchema.table("contacts", {
   metadata: jsonb("metadata").default({}).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => [
+  uniqueIndex("contacts_external_id_channel_type_idx").on(t.externalId, t.channelType),
+]);

@@ -65,22 +65,23 @@ export async function createInboundMessage(conversationId: string, incoming: Inc
 }
 
 export async function sendOutboundMessage(conversationId: string, content: string, senderId: string, type: MessageType = "text") {
-  const [conv] = await db
+  const [row] = await db
     .select({
-      id: conversations.id,
-      channelId: conversations.channelId,
-      contactId: conversations.contactId,
+      convId: conversations.id,
+      contactExternalId: contacts.externalId,
+      channelType: channels.type,
+      channelConfig: channels.config,
     })
     .from(conversations)
+    .innerJoin(contacts, eq(conversations.contactId, contacts.id))
+    .innerJoin(channels, eq(conversations.channelId, channels.id))
     .where(eq(conversations.id, conversationId))
     .limit(1);
 
-  if (!conv) throw new Error("Conversation not found");
+  if (!row) throw new Error("Conversation, contact or channel not found");
 
-  const [contact] = await db.select().from(contacts).where(eq(contacts.id, conv.contactId)).limit(1);
-  const [channel] = await db.select().from(channels).where(eq(channels.id, conv.channelId)).limit(1);
-
-  if (!contact || !channel) throw new Error("Contact or channel not found");
+  const contact = { externalId: row.contactExternalId };
+  const channel = { type: row.channelType, config: row.channelConfig };
 
   // For media types, generate presigned URL for the channel adapter
   const mediaTypes: MessageType[] = ["image", "audio", "video", "document", "sticker"];
@@ -155,7 +156,7 @@ export async function updateMessageStatus(externalId: string, newStatus: Message
 
   const [updated] = await db
     .update(messages)
-    .set({ status: newStatus })
+    .set({ status: newStatus, updatedAt: new Date() })
     .where(eq(messages.id, msg.id))
     .returning();
 
