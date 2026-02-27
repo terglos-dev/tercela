@@ -60,16 +60,7 @@ const submitting = ref(false);
 async function loadTemplate() {
   loading.value = true;
   try {
-    const result = await fetchTemplate(channelId, templateId);
-
-    // Guard: redirect if not editable
-    if (result.status !== "PENDING" && result.status !== "REJECTED") {
-      toast.add({ title: t("templates.notEditable"), color: "warning" });
-      router.replace(`/channels/${channelId}/templates/${templateId}`);
-      return;
-    }
-
-    template.value = result;
+    template.value = await fetchTemplate(channelId, templateId);
   } catch {
     toast.add({ title: t("templates.loadFailed"), color: "error" });
     router.push(`/channels/${channelId}/templates`);

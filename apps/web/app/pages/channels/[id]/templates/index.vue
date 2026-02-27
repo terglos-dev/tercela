@@ -70,20 +70,7 @@
                 size="xs"
                 :to="`/channels/${channelId}/templates/${row.original.id}`"
               />
-              <UTooltip
-                v-if="row.original.status !== 'PENDING' && row.original.status !== 'REJECTED'"
-                :text="$t('templates.approvedCannotEdit')"
-              >
-                <UButton
-                  icon="i-lucide-pencil"
-                  variant="ghost"
-                  color="neutral"
-                  size="xs"
-                  disabled
-                />
-              </UTooltip>
               <UButton
-                v-else
                 icon="i-lucide-pencil"
                 variant="ghost"
                 color="neutral"
