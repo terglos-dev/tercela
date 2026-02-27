@@ -15,12 +15,13 @@ Connect channels like WhatsApp, manage conversations in real time, and organize 
 
 </div>
 
-<!--
-  Screenshots go here. Add images to .github/assets/ and reference them:
+<div align="center">
+  <img src=".github/assets/login.png" alt="Tercela Login" width="480" />
+</div>
 
+<!--
+  Add more screenshots to .github/assets/ and reference them:
   ![Inbox](.github/assets/inbox.png)
-  ![Channels](.github/assets/channels.png)
-  ![Templates](.github/assets/templates.png)
 -->
 
 ## Features
