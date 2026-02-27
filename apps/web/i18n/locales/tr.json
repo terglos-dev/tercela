@@ -49,6 +49,7 @@
   "contacts.unknown": "Bilinmiyor",
 
   "nav.channels": "Kanallar",
+  "nav.templates": "Şablonlar",
 
   "channels.title": "Kanallar",
   "channels.empty": "Yapılandırılmış kanal yok",
@@ -220,6 +221,9 @@
   "templates.charCount": "{count}/{max}",
   "templates.buttonCopyCode": "Kodu Kopyala",
   "templates.buttonCopyCodePlaceholder": "Kod örneği",
+  "templates.channel": "Kanal",
+  "templates.allChannels": "Tüm kanallar",
+  "templates.emptyGlobal": "Şablon bulunamadı.",
   "templates.loadFailed": "Şablon yüklenemedi",
 
   "confirm.confirm": "Onayla",

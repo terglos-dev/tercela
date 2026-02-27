@@ -133,6 +133,44 @@ export async function listTemplates(
     .orderBy(templates.name);
 }
 
+export async function listAllTemplates(
+  opts?: { status?: string; search?: string; channelId?: string },
+) {
+  const conditions = [];
+
+  if (opts?.channelId) {
+    conditions.push(eq(templates.channelId, opts.channelId));
+  }
+
+  if (opts?.status) {
+    conditions.push(eq(templates.status, opts.status));
+  }
+
+  if (opts?.search) {
+    conditions.push(ilike(templates.name, `%${opts.search}%`));
+  }
+
+  return db
+    .select({
+      id: templates.id,
+      channelId: templates.channelId,
+      metaId: templates.metaId,
+      name: templates.name,
+      language: templates.language,
+      category: templates.category,
+      status: templates.status,
+      components: templates.components,
+      createdAt: templates.createdAt,
+      updatedAt: templates.updatedAt,
+      syncedAt: templates.syncedAt,
+      channelName: channels.name,
+    })
+    .from(templates)
+    .innerJoin(channels, eq(templates.channelId, channels.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(templates.name);
+}
+
 export async function createTemplate(
   channelId: string,
   data: {
@@ -192,6 +230,31 @@ export async function getTemplate(channelId: string, templateId: string) {
 
   if (!template) throw new NotFoundError("Template");
   return template;
+}
+
+export async function getTemplateById(templateId: string) {
+  const [result] = await db
+    .select({
+      id: templates.id,
+      channelId: templates.channelId,
+      metaId: templates.metaId,
+      name: templates.name,
+      language: templates.language,
+      category: templates.category,
+      status: templates.status,
+      components: templates.components,
+      createdAt: templates.createdAt,
+      updatedAt: templates.updatedAt,
+      syncedAt: templates.syncedAt,
+      channelName: channels.name,
+    })
+    .from(templates)
+    .innerJoin(channels, eq(templates.channelId, channels.id))
+    .where(eq(templates.id, templateId))
+    .limit(1);
+
+  if (!result) throw new NotFoundError("Template");
+  return result;
 }
 
 export async function updateTemplate(

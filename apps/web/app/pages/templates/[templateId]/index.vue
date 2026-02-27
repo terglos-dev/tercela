@@ -7,7 +7,7 @@
             icon="i-lucide-arrow-left"
             variant="ghost"
             color="neutral"
-            :to="`/channels/${channelId}/templates`"
+            to="/templates"
           />
         </template>
         <template #right>
@@ -17,7 +17,7 @@
               icon="i-lucide-pencil"
               color="neutral"
               variant="soft"
-              :to="`/channels/${channelId}/templates/${templateId}/edit`"
+              :to="`/templates/${templateId}/edit`"
             />
             <UButton
               :label="$t('templates.delete')"
@@ -57,6 +57,12 @@
               <p class="text-[var(--ui-text-muted)]">{{ $t('templates.status') }}</p>
               <UBadge :color="statusColor(template.status)" variant="subtle" size="xs">
                 {{ template.status }}
+              </UBadge>
+            </div>
+            <div>
+              <p class="text-[var(--ui-text-muted)]">{{ $t('templates.channel') }}</p>
+              <UBadge color="info" variant="subtle" size="xs">
+                {{ template.channelName }}
               </UBadge>
             </div>
             <div v-if="template.metaId">
@@ -121,17 +127,16 @@
 </template>
 
 <script setup lang="ts">
-import type { WhatsAppTemplateItem } from "~/types/api";
+import type { TemplateWithChannel } from "~/types/api";
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const channelId = route.params.id as string;
 const templateId = route.params.templateId as string;
-const { fetchTemplate, deleteTemplate } = useTemplates();
+const { fetchTemplateById, deleteTemplate } = useTemplates();
 
-const template = ref<WhatsAppTemplateItem | null>(null);
+const template = ref<TemplateWithChannel | null>(null);
 const loading = ref(true);
 const deleteModalOpen = ref(false);
 const deleting = ref(false);
@@ -152,10 +157,10 @@ function formatDate(dateStr: string) {
 async function loadTemplate() {
   loading.value = true;
   try {
-    template.value = await fetchTemplate(channelId, templateId);
+    template.value = await fetchTemplateById(templateId);
   } catch {
     toast.add({ title: t("templates.loadFailed"), color: "error" });
-    router.push(`/channels/${channelId}/templates`);
+    router.push("/templates");
   } finally {
     loading.value = false;
   }
@@ -165,9 +170,9 @@ async function onDelete() {
   if (!template.value) return;
   deleting.value = true;
   try {
-    await deleteTemplate(channelId, template.value.name);
+    await deleteTemplate(template.value.channelId, template.value.name);
     toast.add({ title: t("templates.deleted"), color: "success" });
-    router.push(`/channels/${channelId}/templates`);
+    router.push("/templates");
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : t("templates.deleteFailed");
     toast.add({ title: message, color: "error" });

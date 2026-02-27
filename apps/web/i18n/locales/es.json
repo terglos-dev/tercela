@@ -49,6 +49,7 @@
   "contacts.unknown": "Desconocido",
 
   "nav.channels": "Canales",
+  "nav.templates": "Plantillas",
 
   "channels.title": "Canales",
   "channels.empty": "No hay canales configurados",
@@ -220,6 +221,9 @@
   "templates.charCount": "{count}/{max}",
   "templates.buttonCopyCode": "Copiar C\u00f3digo",
   "templates.buttonCopyCodePlaceholder": "Ejemplo de c\u00f3digo",
+  "templates.channel": "Canal",
+  "templates.allChannels": "Todos los canales",
+  "templates.emptyGlobal": "No se encontraron plantillas.",
   "templates.loadFailed": "Error al cargar plantilla",
 
   "confirm.confirm": "Confirmar",

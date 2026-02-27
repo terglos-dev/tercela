@@ -73,3 +73,7 @@ export interface WhatsAppTemplateItem {
   updatedAt: string;
   syncedAt: string;
 }
+
+export interface TemplateWithChannel extends WhatsAppTemplateItem {
+  channelName: string;
+}

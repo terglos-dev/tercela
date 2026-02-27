@@ -49,6 +49,7 @@
   "contacts.unknown": "Tidak dikenal",
 
   "nav.channels": "Kanal",
+  "nav.templates": "Template",
 
   "channels.title": "Kanal",
   "channels.empty": "Tidak ada kanal yang dikonfigurasi",
@@ -220,6 +221,9 @@
   "templates.charCount": "{count}/{max}",
   "templates.buttonCopyCode": "Salin Kode",
   "templates.buttonCopyCodePlaceholder": "Contoh kode",
+  "templates.channel": "Kanal",
+  "templates.allChannels": "Semua kanal",
+  "templates.emptyGlobal": "Tidak ada template ditemukan.",
   "templates.loadFailed": "Gagal memuat template",
 
   "confirm.confirm": "Konfirmasi",

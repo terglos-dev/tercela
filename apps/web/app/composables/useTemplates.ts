@@ -1,8 +1,10 @@
-import type { WhatsAppTemplateItem } from "~/types/api";
+import type { WhatsAppTemplateItem, TemplateWithChannel } from "~/types/api";
 
 export function useTemplates() {
   const templates = useState<WhatsAppTemplateItem[]>("templates", () => []);
+  const allTemplates = useState<TemplateWithChannel[]>("all_templates", () => []);
   const loading = useState("templates_loading", () => false);
+  const allLoading = useState("all_templates_loading", () => false);
   const syncing = useState("templates_syncing", () => false);
   const api = useApi();
 
@@ -18,6 +20,22 @@ export function useTemplates() {
       );
     } finally {
       loading.value = false;
+    }
+  }
+
+  async function fetchAllTemplates(opts?: { status?: string; search?: string; channelId?: string }) {
+    allLoading.value = true;
+    try {
+      const params = new URLSearchParams();
+      if (opts?.status) params.set("status", opts.status);
+      if (opts?.search) params.set("search", opts.search);
+      if (opts?.channelId) params.set("channelId", opts.channelId);
+      const qs = params.toString();
+      allTemplates.value = await api.get<TemplateWithChannel[]>(
+        `/v1/templates${qs ? `?${qs}` : ""}`,
+      );
+    } finally {
+      allLoading.value = false;
     }
   }
 
@@ -44,6 +62,10 @@ export function useTemplates() {
     return await api.get<WhatsAppTemplateItem>(`/v1/channels/${channelId}/templates/${templateId}`);
   }
 
+  async function fetchTemplateById(templateId: string) {
+    return await api.get<TemplateWithChannel>(`/v1/templates/${templateId}`);
+  }
+
   async function updateTemplate(
     channelId: string,
     templateId: string,
@@ -56,5 +78,5 @@ export function useTemplates() {
     await api.delete(`/v1/channels/${channelId}/templates/${encodeURIComponent(name)}`);
   }
 
-  return { templates, loading, syncing, fetchTemplates, syncTemplates, createTemplate, fetchTemplate, updateTemplate, deleteTemplate };
+  return { templates, allTemplates, loading, allLoading, syncing, fetchTemplates, fetchAllTemplates, syncTemplates, createTemplate, fetchTemplate, fetchTemplateById, updateTemplate, deleteTemplate };
 }
