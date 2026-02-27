@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { eq } from "drizzle-orm";
 import { db } from "../db";
@@ -118,4 +118,42 @@ export async function getPresignedUrl(key: string, expiresIn = 3600): Promise<st
     }),
     { expiresIn },
   );
+}
+
+export async function testS3Connection(config: StorageConfig): Promise<void> {
+  const clientConfig: ConstructorParameters<typeof S3Client>[0] = {
+    region: config.region || "us-east-1",
+    credentials: {
+      accessKeyId: config.accessKeyId,
+      secretAccessKey: config.secretAccessKey,
+    },
+  };
+
+  if (config.endpoint) {
+    clientConfig.endpoint = config.endpoint;
+    clientConfig.forcePathStyle = true;
+  }
+
+  const client = new S3Client(clientConfig);
+  const testKey = `${config.pathPrefix || ""}tercela-test-${crypto.randomUUID()}`;
+
+  try {
+    await client.send(
+      new PutObjectCommand({
+        Bucket: config.bucket,
+        Key: testKey,
+        Body: "tercela-connection-test",
+        ContentType: "text/plain",
+      }),
+    );
+
+    await client.send(
+      new DeleteObjectCommand({
+        Bucket: config.bucket,
+        Key: testKey,
+      }),
+    );
+  } finally {
+    client.destroy();
+  }
 }

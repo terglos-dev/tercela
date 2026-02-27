@@ -86,10 +86,8 @@ import type { TableColumn } from "@nuxt/ui";
 import type { UserListItem } from "~/types/api";
 
 const { t } = useI18n();
-const api = useApi();
 const toast = useToast();
-const usersList = ref<UserListItem[]>([]);
-const usersLoading = ref(true);
+const { users: usersList, loading: usersLoading, fetchUsers, createUser } = useUsers();
 const newUser = reactive({ name: "", email: "", password: "", role: "agent" });
 const activeTab = ref("agents");
 
@@ -104,18 +102,11 @@ const userColumns = computed<TableColumn<UserListItem>[]>(() => [
   { accessorKey: "role", header: t("settings.role") },
 ]);
 
-onMounted(async () => {
-  try {
-    usersList.value = await api.get<UserListItem[]>("/v1/users");
-  } finally {
-    usersLoading.value = false;
-  }
-});
+onMounted(() => fetchUsers());
 
 async function handleCreateUser() {
   try {
-    const user = await api.post<UserListItem>("/v1/users", { ...newUser });
-    usersList.value.push(user);
+    await createUser({ ...newUser });
     Object.assign(newUser, { name: "", email: "", password: "", role: "agent" });
     toast.add({ title: t("settings.agentCreated"), icon: "i-lucide-check", color: "success" });
   } catch (e: unknown) {

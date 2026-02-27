@@ -19,6 +19,7 @@ export interface Message {
   direction: MessageDirection;
   type: MessageType;
   content: string;
+  data: Record<string, unknown> | null;
   mediaId: string | null;
   media?: Media | null;
   externalId: string | null;

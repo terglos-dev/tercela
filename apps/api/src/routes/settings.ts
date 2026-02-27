@@ -1,8 +1,9 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { eq } from "drizzle-orm";
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { db } from "../db";
 import { settings } from "../db/schema";
+import { testS3Connection } from "../services/storage";
+import type { StorageConfig } from "../services/storage";
 import { success, error } from "../utils/response";
 import { wrapSuccess, ErrorResponseSchema } from "../utils/openapi-schemas";
 
@@ -19,7 +20,6 @@ const KeyParam = z.object({
   key: z.string().openapi({ param: { name: "key", in: "path" }, example: "storage" }),
 });
 
-/** Mask sensitive fields in a setting value before returning to client */
 function maskSettingValue(key: string, value: Record<string, unknown>): Record<string, unknown> {
   if (key === "storage") {
     const masked = { ...value };
@@ -42,7 +42,7 @@ function serializeSetting(row: typeof settings.$inferSelect) {
   };
 }
 
-// GET / — list all settings
+// GET /
 settingsRouter.openapi(
   createRoute({
     method: "get",
@@ -62,7 +62,7 @@ settingsRouter.openapi(
   },
 );
 
-// PUT /:key — upsert a setting by key
+// PUT /:key
 const upsertSchema = z.object({
   value: z.record(z.string(), z.unknown()),
 });
@@ -88,13 +88,11 @@ settingsRouter.openapi(
     const { key } = c.req.valid("param");
     const { value } = c.req.valid("json");
 
-    // Check if setting exists
     const [existing] = await db.select().from(settings).where(eq(settings.key, key)).limit(1);
 
     let row: typeof settings.$inferSelect;
 
     if (existing) {
-      // Merge: if the incoming value has a masked secretAccessKey, keep the old one
       const merged = { ...value };
       if (key === "storage" && typeof merged.secretAccessKey === "string" && merged.secretAccessKey.startsWith("••••")) {
         const oldValue = existing.value as Record<string, unknown>;
@@ -117,7 +115,7 @@ settingsRouter.openapi(
   },
 );
 
-// POST /storage/test — test S3 connection
+// POST /storage/test
 const storageTestSchema = z.object({
   provider: z.string().min(1),
   endpoint: z.string().optional(),
@@ -140,7 +138,7 @@ settingsRouter.openapi(
     responses: {
       200: {
         description: "Connection test result",
-        content: { "application/json": { schema: wrapSuccess(z.object({ success: z.boolean(), message: z.string().optional() })) } },
+        content: { "application/json": { schema: wrapSuccess(z.object({ success: z.boolean() })) } },
       },
       400: {
         description: "Connection test failed",
@@ -161,47 +159,12 @@ settingsRouter.openapi(
       }
     }
 
-    const clientConfig: ConstructorParameters<typeof S3Client>[0] = {
-      region: config.region || "us-east-1",
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: secretKey,
-      },
-    };
-
-    if (config.endpoint) {
-      clientConfig.endpoint = config.endpoint;
-      clientConfig.forcePathStyle = true;
-    }
-
-    const client = new S3Client(clientConfig);
-    const testKey = `${config.pathPrefix || ""}tercela-test-${crypto.randomUUID()}`;
-
     try {
-      // Put a test object
-      await client.send(
-        new PutObjectCommand({
-          Bucket: config.bucket,
-          Key: testKey,
-          Body: "tercela-connection-test",
-          ContentType: "text/plain",
-        }),
-      );
-
-      // Delete the test object
-      await client.send(
-        new DeleteObjectCommand({
-          Bucket: config.bucket,
-          Key: testKey,
-        }),
-      );
-
+      await testS3Connection({ ...config, secretAccessKey: secretKey } as StorageConfig);
       return success(c, { success: true }, 200);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       return error(c, message, 400);
-    } finally {
-      client.destroy();
     }
   },
 );
