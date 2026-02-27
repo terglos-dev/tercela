@@ -3,12 +3,24 @@ export type MessageType = "text" | "image" | "audio" | "video" | "document" | "l
   | "sticker" | "reaction" | "contacts" | "interactive" | "button" | "order" | "unknown";
 export type MessageStatus = "pending" | "sent" | "delivered" | "read" | "failed";
 
+export interface Media {
+  id: string;
+  s3Key: string;
+  mimeType: string;
+  filename: string | null;
+  size: number | null;
+  uploadedBy: string | null;
+  createdAt: Date;
+}
+
 export interface Message {
   id: string;
   conversationId: string;
   direction: MessageDirection;
   type: MessageType;
   content: string;
+  mediaId: string | null;
+  media?: Media | null;
   externalId: string | null;
   status: MessageStatus;
   senderId: string | null;

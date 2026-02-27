@@ -8,6 +8,7 @@ import { downloadWhatsAppMedia } from "../../channels/whatsapp";
 import { findOrCreateContact } from "../../services/contact";
 import { findOrCreateConversation } from "../../services/conversation";
 import { createInboundMessage, updateMessageStatus } from "../../services/message";
+import { createMediaRecord } from "../../services/media";
 import { getStorageConfig, uploadMedia } from "../../services/storage";
 import type { ChannelType, MessageStatus, MessageType } from "@tercela/shared";
 
@@ -140,6 +141,7 @@ whatsappWebhook.openapi(
 
     if (incoming) {
       // Download media from WhatsApp and upload to S3 if storage is configured
+      let inboundMediaRecord: Awaited<ReturnType<typeof createMediaRecord>> | undefined;
       const mediaTypes: MessageType[] = ["image", "audio", "video", "document", "sticker"];
       if (mediaTypes.includes(incoming.type)) {
         try {
@@ -152,16 +154,18 @@ whatsappWebhook.openapi(
             const now = new Date();
             const datePath = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
             const s3Key = `media/${datePath}/${crypto.randomUUID()}.${ext}`;
-            await uploadMedia(buffer, s3Key, mimeType);
+            const fullKey = await uploadMedia(buffer, s3Key, mimeType);
 
-            incoming.content = JSON.stringify({
-              url: `/v1/media/${storageConfig.pathPrefix ? storageConfig.pathPrefix + s3Key : s3Key}`,
+            inboundMediaRecord = await createMediaRecord({
+              s3Key: fullKey,
               mimeType,
-              filename: parsed.filename || undefined,
-              caption: parsed.caption || undefined,
+              filename: parsed.filename || null,
               size: buffer.length,
             });
-            console.log("[WA webhook] Media uploaded to S3:", s3Key);
+
+            // Content becomes caption-only (or empty for no caption)
+            incoming.content = parsed.caption || "";
+            console.log("[WA webhook] Media uploaded to S3:", s3Key, "mediaId:", inboundMediaRecord.id);
           }
         } catch (err) {
           console.error("[WA webhook] Media download/upload failed, keeping original content:", err);
@@ -179,13 +183,16 @@ whatsappWebhook.openapi(
       const conversation = await findOrCreateConversation(contact.id, channel.id);
       console.log("[WA webhook] Conversation:", conversation.id);
 
-      const message = await createInboundMessage(conversation.id, incoming);
+      const message = await createInboundMessage(conversation.id, incoming, inboundMediaRecord?.id);
+      const messagePayload = inboundMediaRecord
+        ? { ...message, media: inboundMediaRecord }
+        : message;
       console.log("[WA webhook] Message created:", message.id, "type:", message.type, "status:", message.status);
 
       if (server) {
         server.publish(
           `conversation:${conversation.id}`,
-          JSON.stringify({ type: "message:new", payload: message }),
+          JSON.stringify({ type: "message:new", payload: messagePayload }),
         );
         server.publish(
           "conversations",

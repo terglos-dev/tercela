@@ -124,45 +124,45 @@
                         {{ parseLocation(msg.content) }}
                       </span>
                     </template>
-                    <template v-else-if="msg.type === 'image' && parseMediaContent(msg.content)">
+                    <template v-else-if="msg.type === 'image' && msgMediaUrl(msg)">
                       <img
-                        :src="mediaUrl(parseMediaContent(msg.content)!.url)"
-                        :alt="parseMediaContent(msg.content)!.caption || $t('chat.type.image')"
+                        :src="msgMediaUrl(msg)!"
+                        :alt="getMediaMeta(msg)?.caption || $t('chat.type.image')"
                         class="max-w-full rounded-lg cursor-pointer"
                         loading="lazy"
                       />
-                      <p v-if="parseMediaContent(msg.content)!.caption" class="mt-1 text-sm">{{ parseMediaContent(msg.content)!.caption }}</p>
+                      <p v-if="getMediaMeta(msg)?.caption" class="mt-1 text-sm">{{ getMediaMeta(msg)!.caption }}</p>
                     </template>
-                    <template v-else-if="msg.type === 'sticker' && parseMediaContent(msg.content)">
+                    <template v-else-if="msg.type === 'sticker' && msgMediaUrl(msg)">
                       <img
-                        :src="mediaUrl(parseMediaContent(msg.content)!.url)"
+                        :src="msgMediaUrl(msg)!"
                         alt="Sticker"
                         class="max-w-[150px] rounded"
                         loading="lazy"
                       />
                     </template>
-                    <template v-else-if="msg.type === 'audio' && parseMediaContent(msg.content)">
+                    <template v-else-if="msg.type === 'audio' && msgMediaUrl(msg)">
                       <audio controls preload="none" class="max-w-full">
-                        <source :src="mediaUrl(parseMediaContent(msg.content)!.url)" :type="parseMediaContent(msg.content)!.mimeType" />
+                        <source :src="msgMediaUrl(msg)!" :type="getMediaMeta(msg)?.mimeType" />
                       </audio>
                     </template>
-                    <template v-else-if="msg.type === 'video' && parseMediaContent(msg.content)">
+                    <template v-else-if="msg.type === 'video' && msgMediaUrl(msg)">
                       <video controls preload="none" class="max-w-full rounded-lg">
-                        <source :src="mediaUrl(parseMediaContent(msg.content)!.url)" :type="parseMediaContent(msg.content)!.mimeType" />
+                        <source :src="msgMediaUrl(msg)!" :type="getMediaMeta(msg)?.mimeType" />
                       </video>
-                      <p v-if="parseMediaContent(msg.content)!.caption" class="mt-1 text-sm">{{ parseMediaContent(msg.content)!.caption }}</p>
+                      <p v-if="getMediaMeta(msg)?.caption" class="mt-1 text-sm">{{ getMediaMeta(msg)!.caption }}</p>
                     </template>
-                    <template v-else-if="msg.type === 'document' && parseMediaContent(msg.content)">
+                    <template v-else-if="msg.type === 'document' && msgMediaUrl(msg)">
                       <a
-                        :href="mediaUrl(parseMediaContent(msg.content)!.url)"
+                        :href="msgMediaUrl(msg)!"
                         target="_blank"
                         class="flex items-center gap-2 py-1 underline-offset-2 hover:underline"
                       >
                         <UIcon name="i-lucide-file-text" class="size-5 shrink-0" />
-                        <span class="flex-1 min-w-0 truncate">{{ parseMediaContent(msg.content)!.filename || $t('chat.type.document') }}</span>
-                        <span v-if="parseMediaContent(msg.content)!.size" class="text-xs opacity-60 shrink-0">{{ formatFileSize(parseMediaContent(msg.content)!.size!) }}</span>
+                        <span class="flex-1 min-w-0 truncate">{{ getMediaMeta(msg)?.filename || $t('chat.type.document') }}</span>
+                        <span v-if="getMediaMeta(msg)?.size" class="text-xs opacity-60 shrink-0">{{ formatFileSize(getMediaMeta(msg)!.size!) }}</span>
                       </a>
-                      <p v-if="parseMediaContent(msg.content)!.caption" class="mt-1 text-sm">{{ parseMediaContent(msg.content)!.caption }}</p>
+                      <p v-if="getMediaMeta(msg)?.caption" class="mt-1 text-sm">{{ getMediaMeta(msg)!.caption }}</p>
                     </template>
                     <template v-else>
                       <span class="flex items-center gap-1">
@@ -243,7 +243,7 @@ import type { Serialized, Message, MessageStatus } from "@tercela/shared";
 import { avatarColor } from "~/utils/avatar";
 import { timeAgo } from "~/utils/time";
 import { phoneWithFlag } from "~/utils/phone";
-import { parseMediaContent, formatFileSize } from "~/utils/media";
+import { resolveMediaUrl, getMediaMeta, formatFileSize } from "~/utils/media";
 
 const route = useRoute();
 const config = useRuntimeConfig();
@@ -263,8 +263,8 @@ const uploading = ref(false);
 const messagesContainer = ref<HTMLElement>();
 const fileInput = ref<HTMLInputElement>();
 
-function mediaUrl(path: string): string {
-  return `${config.public.apiBase}${path}${path.includes("?") ? "&" : "?"}token=${token.value}`;
+function msgMediaUrl(msg: { media?: { id: string } | null; content: string }): string | null {
+  return resolveMediaUrl(msg, config.public.apiBase as string, token.value || "");
 }
 
 const statusOptions = ["open", "pending", "closed"];
