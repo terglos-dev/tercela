@@ -4,3 +4,4 @@ export { contacts } from "./contacts";
 export { channels } from "./channels";
 export { conversations } from "./conversations";
 export { messages } from "./messages";
+export { settings } from "./settings";

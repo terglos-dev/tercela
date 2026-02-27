@@ -113,5 +113,23 @@
   "settings.emailPlaceholder": "email{'@'}perusahaan.com",
   "settings.passwordPlaceholder": "Minimal 6 karakter",
   "settings.agentCreated": "Agen berhasil dibuat",
-  "settings.createFailed": "Gagal membuat agen"
+  "settings.createFailed": "Gagal membuat agen",
+  "settings.storage": "Penyimpanan",
+  "settings.storageDescription": "Konfigurasi penyimpanan kompatibel S3 untuk file media (gambar, audio, dokumen).",
+  "settings.storageProvider": "Penyedia",
+  "settings.storageEndpoint": "URL Endpoint",
+  "settings.storageRegion": "Wilayah",
+  "settings.storageBucket": "Bucket",
+  "settings.storageAccessKey": "Access Key ID",
+  "settings.storageSecretKey": "Secret Access Key",
+  "settings.storagePathPrefix": "Awalan path",
+  "settings.storageTestConnection": "Tes Koneksi",
+  "settings.storageTestSuccess": "Koneksi berhasil",
+  "settings.storageSave": "Simpan",
+  "settings.storageSaved": "Pengaturan penyimpanan disimpan",
+  "settings.storageSaveFailed": "Gagal menyimpan pengaturan penyimpanan",
+
+  "chat.uploadFailed": "Gagal mengunggah file",
+  "chat.attach": "Lampirkan file",
+  "chat.downloading": "Mengunduh..."
 }

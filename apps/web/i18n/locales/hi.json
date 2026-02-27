@@ -113,5 +113,23 @@
   "settings.emailPlaceholder": "ईमेल{'@'}कंपनी.कॉम",
   "settings.passwordPlaceholder": "न्यूनतम 6 अक्षर",
   "settings.agentCreated": "एजेंट बनाया गया",
-  "settings.createFailed": "एजेंट बनाने में विफल"
+  "settings.createFailed": "एजेंट बनाने में विफल",
+  "settings.storage": "स्टोरेज",
+  "settings.storageDescription": "मीडिया फ़ाइलों (छवि, ऑडियो, दस्तावेज़) के लिए S3-संगत स्टोरेज कॉन्फ़िगर करें।",
+  "settings.storageProvider": "प्रदाता",
+  "settings.storageEndpoint": "एंडपॉइंट URL",
+  "settings.storageRegion": "क्षेत्र",
+  "settings.storageBucket": "बकेट",
+  "settings.storageAccessKey": "एक्सेस की ID",
+  "settings.storageSecretKey": "सीक्रेट एक्सेस की",
+  "settings.storagePathPrefix": "पथ उपसर्ग",
+  "settings.storageTestConnection": "कनेक्शन परीक्षण",
+  "settings.storageTestSuccess": "कनेक्शन सफल",
+  "settings.storageSave": "सेव करें",
+  "settings.storageSaved": "स्टोरेज सेटिंग्स सेव हुईं",
+  "settings.storageSaveFailed": "स्टोरेज सेटिंग्स सेव करने में विफल",
+
+  "chat.uploadFailed": "फ़ाइल अपलोड विफल",
+  "chat.attach": "फ़ाइल संलग्न करें",
+  "chat.downloading": "डाउनलोड हो रहा है..."
 }

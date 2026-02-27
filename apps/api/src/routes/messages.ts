@@ -1,7 +1,8 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import type { Serialized, Message } from "@tercela/shared";
+import type { Serialized, Message, MessageType } from "@tercela/shared";
 import { listMessages, sendOutboundMessage } from "../services/message";
-import { success, successWithMeta } from "../utils/response";
+import { getStorageConfig, uploadMedia } from "../services/storage";
+import { success, successWithMeta, error } from "../utils/response";
 import { wrapSuccess, wrapPaginated, ErrorResponseSchema } from "../utils/openapi-schemas";
 
 type MessageResponse = Serialized<Message>;
@@ -120,5 +121,69 @@ messagesRouter.openapi(
     return success(c, msg as unknown as MessageResponse, 201);
   },
 );
+
+// POST /:id/messages/upload — upload media file and send
+messagesRouter.post("/:id/messages/upload", async (c) => {
+  const conversationId = c.req.param("id");
+  const jwtPayload = c.get("jwtPayload");
+  const senderId = jwtPayload.sub as string;
+
+  const formData = await c.req.formData();
+  const file = formData.get("file") as File | null;
+  const caption = (formData.get("caption") as string) || undefined;
+
+  if (!file) {
+    return error(c, "No file provided", 400);
+  }
+
+  const storageConfig = await getStorageConfig();
+  if (!storageConfig) {
+    return error(c, "Storage not configured", 400);
+  }
+
+  const mimeType = file.type || "application/octet-stream";
+  const mimePrefix = mimeType.split("/")[0];
+  let type: MessageType = "document";
+  if (mimePrefix === "image") type = "image";
+  else if (mimePrefix === "audio") type = "audio";
+  else if (mimePrefix === "video") type = "video";
+
+  const ext = file.name?.split(".").pop() || mimeType.split("/")[1]?.split(";")[0] || "bin";
+  const now = new Date();
+  const datePath = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
+  const s3Key = `media/${datePath}/${crypto.randomUUID()}.${ext}`;
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const fullKey = await uploadMedia(buffer, s3Key, mimeType);
+
+  const content = JSON.stringify({
+    url: `/v1/media/${fullKey}`,
+    mimeType,
+    filename: file.name || undefined,
+    caption,
+    size: buffer.length,
+  });
+
+  console.log("[messages] Upload media:", { conversationId, type, filename: file.name, size: buffer.length });
+
+  const msg = await sendOutboundMessage(conversationId, content, senderId, type);
+
+  const server = globalThis.__bunServer;
+  if (server) {
+    server.publish(
+      `conversation:${conversationId}`,
+      JSON.stringify({ type: "message:new", payload: msg }),
+    );
+    server.publish(
+      "conversations",
+      JSON.stringify({
+        type: "conversation:updated",
+        payload: { conversationId, lastMessageAt: new Date() },
+      }),
+    );
+  }
+
+  return success(c, msg as unknown as MessageResponse, 201);
+});
 
 export { messagesRouter };

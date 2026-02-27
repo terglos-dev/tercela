@@ -113,5 +113,23 @@
   "settings.emailPlaceholder": "correo{'@'}empresa.com",
   "settings.passwordPlaceholder": "Mínimo 6 caracteres",
   "settings.agentCreated": "Agente creado",
-  "settings.createFailed": "Error al crear agente"
+  "settings.createFailed": "Error al crear agente",
+  "settings.storage": "Almacenamiento",
+  "settings.storageDescription": "Configura almacenamiento compatible con S3 para archivos multimedia (imágenes, audio, documentos).",
+  "settings.storageProvider": "Proveedor",
+  "settings.storageEndpoint": "URL del endpoint",
+  "settings.storageRegion": "Región",
+  "settings.storageBucket": "Bucket",
+  "settings.storageAccessKey": "Access Key ID",
+  "settings.storageSecretKey": "Secret Access Key",
+  "settings.storagePathPrefix": "Prefijo de ruta",
+  "settings.storageTestConnection": "Probar conexión",
+  "settings.storageTestSuccess": "Conexión exitosa",
+  "settings.storageSave": "Guardar",
+  "settings.storageSaved": "Configuración de almacenamiento guardada",
+  "settings.storageSaveFailed": "Error al guardar configuración de almacenamiento",
+
+  "chat.uploadFailed": "Error al subir archivo",
+  "chat.attach": "Adjuntar archivo",
+  "chat.downloading": "Descargando..."
 }

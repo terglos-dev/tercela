@@ -113,5 +113,23 @@
   "settings.emailPlaceholder": "eposta{'@'}sirket.com",
   "settings.passwordPlaceholder": "En az 6 karakter",
   "settings.agentCreated": "Temsilci oluşturuldu",
-  "settings.createFailed": "Temsilci oluşturulamadı"
+  "settings.createFailed": "Temsilci oluşturulamadı",
+  "settings.storage": "Depolama",
+  "settings.storageDescription": "Medya dosyaları (resim, ses, belge) için S3 uyumlu depolama yapılandırın.",
+  "settings.storageProvider": "Sağlayıcı",
+  "settings.storageEndpoint": "Endpoint URL",
+  "settings.storageRegion": "Bölge",
+  "settings.storageBucket": "Bucket",
+  "settings.storageAccessKey": "Erişim Anahtarı ID",
+  "settings.storageSecretKey": "Gizli Erişim Anahtarı",
+  "settings.storagePathPrefix": "Yol öneki",
+  "settings.storageTestConnection": "Bağlantıyı Test Et",
+  "settings.storageTestSuccess": "Bağlantı başarılı",
+  "settings.storageSave": "Kaydet",
+  "settings.storageSaved": "Depolama ayarları kaydedildi",
+  "settings.storageSaveFailed": "Depolama ayarları kaydedilemedi",
+
+  "chat.uploadFailed": "Dosya yüklenemedi",
+  "chat.attach": "Dosya ekle",
+  "chat.downloading": "İndiriliyor..."
 }

@@ -124,6 +124,46 @@
                         {{ parseLocation(msg.content) }}
                       </span>
                     </template>
+                    <template v-else-if="msg.type === 'image' && parseMediaContent(msg.content)">
+                      <img
+                        :src="mediaUrl(parseMediaContent(msg.content)!.url)"
+                        :alt="parseMediaContent(msg.content)!.caption || $t('chat.type.image')"
+                        class="max-w-full rounded-lg cursor-pointer"
+                        loading="lazy"
+                      />
+                      <p v-if="parseMediaContent(msg.content)!.caption" class="mt-1 text-sm">{{ parseMediaContent(msg.content)!.caption }}</p>
+                    </template>
+                    <template v-else-if="msg.type === 'sticker' && parseMediaContent(msg.content)">
+                      <img
+                        :src="mediaUrl(parseMediaContent(msg.content)!.url)"
+                        alt="Sticker"
+                        class="max-w-[150px] rounded"
+                        loading="lazy"
+                      />
+                    </template>
+                    <template v-else-if="msg.type === 'audio' && parseMediaContent(msg.content)">
+                      <audio controls preload="none" class="max-w-full">
+                        <source :src="mediaUrl(parseMediaContent(msg.content)!.url)" :type="parseMediaContent(msg.content)!.mimeType" />
+                      </audio>
+                    </template>
+                    <template v-else-if="msg.type === 'video' && parseMediaContent(msg.content)">
+                      <video controls preload="none" class="max-w-full rounded-lg">
+                        <source :src="mediaUrl(parseMediaContent(msg.content)!.url)" :type="parseMediaContent(msg.content)!.mimeType" />
+                      </video>
+                      <p v-if="parseMediaContent(msg.content)!.caption" class="mt-1 text-sm">{{ parseMediaContent(msg.content)!.caption }}</p>
+                    </template>
+                    <template v-else-if="msg.type === 'document' && parseMediaContent(msg.content)">
+                      <a
+                        :href="mediaUrl(parseMediaContent(msg.content)!.url)"
+                        target="_blank"
+                        class="flex items-center gap-2 py-1 underline-offset-2 hover:underline"
+                      >
+                        <UIcon name="i-lucide-file-text" class="size-5 shrink-0" />
+                        <span class="flex-1 min-w-0 truncate">{{ parseMediaContent(msg.content)!.filename || $t('chat.type.document') }}</span>
+                        <span v-if="parseMediaContent(msg.content)!.size" class="text-xs opacity-60 shrink-0">{{ formatFileSize(parseMediaContent(msg.content)!.size!) }}</span>
+                      </a>
+                      <p v-if="parseMediaContent(msg.content)!.caption" class="mt-1 text-sm">{{ parseMediaContent(msg.content)!.caption }}</p>
+                    </template>
                     <template v-else>
                       <span class="flex items-center gap-1">
                         <UIcon :name="messageTypeIcon(msg.type)" class="size-3.5 shrink-0" />
@@ -168,16 +208,26 @@
 
           <!-- Input -->
           <div class="border-t border-[var(--ui-border)] p-3 flex gap-2">
+            <input ref="fileInput" type="file" class="hidden" @change="handleFileSelect" />
+            <UButton
+              icon="i-lucide-paperclip"
+              variant="ghost"
+              color="neutral"
+              :disabled="uploading"
+              :loading="uploading"
+              :title="$t('chat.attach')"
+              @click="triggerFileSelect"
+            />
             <UInput
               v-model="newMessage"
               :placeholder="$t('chat.placeholder')"
               class="flex-1"
-              :disabled="sending"
+              :disabled="sending || uploading"
               @keydown.enter.exact.prevent="handleSend"
             />
             <UButton
               icon="i-lucide-send"
-              :disabled="!newMessage.trim() || sending"
+              :disabled="!newMessage.trim() || sending || uploading"
               :loading="sending"
               @click="handleSend"
             />
@@ -193,20 +243,29 @@ import type { Serialized, Message, MessageStatus } from "@tercela/shared";
 import { avatarColor } from "~/utils/avatar";
 import { timeAgo } from "~/utils/time";
 import { phoneWithFlag } from "~/utils/phone";
+import { parseMediaContent, formatFileSize } from "~/utils/media";
 
 const route = useRoute();
+const config = useRuntimeConfig();
 const { t, locale } = useI18n();
 const conversationId = computed(() => route.params.id as string);
+const token = useCookie("auth_token");
 
 const { conversations, fetchConversations, updateConversation } = useConversations();
 const panelCollapsed = useCookie<boolean>("conv_panel_collapsed", { default: () => false });
-const { messages, loading: messagesLoading, loadingMore, hasMore, fetchMessages, loadMore, sendMessage } = useMessages();
+const { messages, loading: messagesLoading, loadingMore, hasMore, fetchMessages, loadMore, sendMessage, uploadAndSendMedia } = useMessages();
 const { on, subscribe, unsubscribe } = useWebSocket();
 const toast = useToast();
 
 const newMessage = ref("");
 const sending = ref(false);
+const uploading = ref(false);
 const messagesContainer = ref<HTMLElement>();
+const fileInput = ref<HTMLInputElement>();
+
+function mediaUrl(path: string): string {
+  return `${config.public.apiBase}${path}${path.includes("?") ? "&" : "?"}token=${token.value}`;
+}
 
 const statusOptions = ["open", "pending", "closed"];
 
@@ -275,6 +334,27 @@ async function handleSend() {
     toast.add({ title: t("chat.sendFailed"), color: "error", icon: "i-lucide-alert-circle" });
   } finally {
     sending.value = false;
+  }
+}
+
+function triggerFileSelect() {
+  fileInput.value?.click();
+}
+
+async function handleFileSelect(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  input.value = "";
+
+  uploading.value = true;
+  try {
+    await uploadAndSendMedia(conversationId.value, file);
+    scrollToBottom();
+  } catch {
+    toast.add({ title: t("chat.uploadFailed"), color: "error", icon: "i-lucide-alert-circle" });
+  } finally {
+    uploading.value = false;
   }
 }
 

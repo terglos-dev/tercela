@@ -113,5 +113,23 @@
   "settings.emailPlaceholder": "email{'@'}company.com",
   "settings.passwordPlaceholder": "Minimum 6 characters",
   "settings.agentCreated": "Agent created",
-  "settings.createFailed": "Failed to create agent"
+  "settings.createFailed": "Failed to create agent",
+  "settings.storage": "Storage",
+  "settings.storageDescription": "Configure S3-compatible storage for media files (images, audio, documents).",
+  "settings.storageProvider": "Provider",
+  "settings.storageEndpoint": "Endpoint URL",
+  "settings.storageRegion": "Region",
+  "settings.storageBucket": "Bucket",
+  "settings.storageAccessKey": "Access Key ID",
+  "settings.storageSecretKey": "Secret Access Key",
+  "settings.storagePathPrefix": "Path prefix",
+  "settings.storageTestConnection": "Test Connection",
+  "settings.storageTestSuccess": "Connection successful",
+  "settings.storageSave": "Save",
+  "settings.storageSaved": "Storage settings saved",
+  "settings.storageSaveFailed": "Failed to save storage settings",
+
+  "chat.uploadFailed": "Failed to upload file",
+  "chat.attach": "Attach file",
+  "chat.downloading": "Downloading..."
 }

@@ -1,6 +1,31 @@
 import type { ChannelAdapter, IncomingMessage, OutgoingMessage, SendResult } from "../types";
 import type { WhatsAppChannelConfig, MessageType } from "@tercela/shared";
 
+export async function downloadWhatsAppMedia(
+  mediaId: string,
+  accessToken: string,
+): Promise<{ buffer: Buffer; mimeType: string }> {
+  // Step 1: Get the media URL from Meta Graph API
+  const metaRes = await fetch(`https://graph.facebook.com/v21.0/${mediaId}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!metaRes.ok) {
+    throw new Error(`Failed to get media URL: ${metaRes.status}`);
+  }
+  const metaData = (await metaRes.json()) as { url: string; mime_type: string };
+
+  // Step 2: Download the binary from the URL
+  const downloadRes = await fetch(metaData.url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!downloadRes.ok) {
+    throw new Error(`Failed to download media: ${downloadRes.status}`);
+  }
+
+  const buffer = Buffer.from(await downloadRes.arrayBuffer());
+  return { buffer, mimeType: metaData.mime_type };
+}
+
 export const whatsappAdapter: ChannelAdapter = {
   type: "whatsapp",
 
@@ -67,16 +92,32 @@ export const whatsappAdapter: ChannelAdapter = {
       content = msg.text?.body ?? "";
     } else if (msg.type === "image") {
       type = "image";
-      content = msg.image?.id ?? "";
+      content = JSON.stringify({
+        mediaId: msg.image?.id,
+        mimeType: msg.image?.mime_type,
+        caption: msg.image?.caption,
+      });
     } else if (msg.type === "audio") {
       type = "audio";
-      content = msg.audio?.id ?? "";
+      content = JSON.stringify({
+        mediaId: msg.audio?.id,
+        mimeType: msg.audio?.mime_type,
+      });
     } else if (msg.type === "video") {
       type = "video";
-      content = msg.video?.id ?? "";
+      content = JSON.stringify({
+        mediaId: msg.video?.id,
+        mimeType: msg.video?.mime_type,
+        caption: msg.video?.caption,
+      });
     } else if (msg.type === "document") {
       type = "document";
-      content = msg.document?.id ?? "";
+      content = JSON.stringify({
+        mediaId: msg.document?.id,
+        mimeType: msg.document?.mime_type,
+        filename: msg.document?.filename,
+        caption: msg.document?.caption,
+      });
     } else if (msg.type === "location") {
       type = "location";
       content = JSON.stringify({
@@ -85,7 +126,10 @@ export const whatsappAdapter: ChannelAdapter = {
       });
     } else if (msg.type === "sticker") {
       type = "sticker";
-      content = msg.sticker?.id ?? "";
+      content = JSON.stringify({
+        mediaId: msg.sticker?.id,
+        mimeType: msg.sticker?.mime_type,
+      });
     } else if (msg.type === "reaction") {
       type = "reaction";
       content = JSON.stringify({
