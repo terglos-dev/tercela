@@ -4,8 +4,10 @@ import { wrapSuccess, ErrorResponseSchema } from "../utils/openapi-schemas";
 import {
   syncTemplates,
   listTemplates,
+  listAllTemplates,
   createTemplate,
   getTemplate,
+  getTemplateById,
   updateTemplate,
   deleteTemplate,
 } from "../services/template";
@@ -249,4 +251,82 @@ templatesRouter.openapi(
   },
 );
 
-export { templatesRouter };
+// Top-level templates router (cross-channel)
+const allTemplatesRouter = new OpenAPIHono();
+
+const AllTemplateSchema = TemplateSchema.extend({
+  channelName: z.string(),
+});
+
+allTemplatesRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/",
+    tags: ["Templates"],
+    summary: "List all templates across channels",
+    request: {
+      query: z.object({
+        status: z.string().optional(),
+        search: z.string().optional(),
+        channelId: z.string().optional(),
+      }),
+    },
+    responses: {
+      200: {
+        description: "List of all templates",
+        content: { "application/json": { schema: wrapSuccess(z.array(AllTemplateSchema)) } },
+      },
+    },
+  }),
+  async (c) => {
+    const { status, search, channelId } = c.req.valid("query");
+    const result = await listAllTemplates({ status, search, channelId });
+    return success(
+      c,
+      result.map((t) => ({
+        ...serializeTemplate(t as TemplateRow),
+        channelName: t.channelName,
+      })),
+      200,
+    );
+  },
+);
+
+// GET /templates/:templateId
+const GlobalTemplateIdParam = z.object({
+  templateId: z.string().openapi({ param: { name: "templateId", in: "path" }, example: "uuid" }),
+});
+
+allTemplatesRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/{templateId}",
+    tags: ["Templates"],
+    summary: "Get a single template by ID (cross-channel)",
+    request: { params: GlobalTemplateIdParam },
+    responses: {
+      200: {
+        description: "Template details",
+        content: { "application/json": { schema: wrapSuccess(AllTemplateSchema) } },
+      },
+      404: {
+        description: "Template not found",
+        content: { "application/json": { schema: ErrorResponseSchema } },
+      },
+    },
+  }),
+  async (c) => {
+    const { templateId } = c.req.valid("param");
+    const result = await getTemplateById(templateId);
+    return success(
+      c,
+      {
+        ...serializeTemplate(result as TemplateRow),
+        channelName: result.channelName,
+      },
+      200,
+    );
+  },
+);
+
+export { templatesRouter, allTemplatesRouter };

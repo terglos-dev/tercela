@@ -49,6 +49,7 @@
   "contacts.unknown": "अज्ञात",
 
   "nav.channels": "चैनल",
+  "nav.templates": "टेम्पलेट",
 
   "channels.title": "चैनल",
   "channels.empty": "कोई चैनल कॉन्फ़िगर नहीं",
@@ -220,6 +221,9 @@
   "templates.charCount": "{count}/{max}",
   "templates.buttonCopyCode": "कोड कॉपी करें",
   "templates.buttonCopyCodePlaceholder": "कोड उदाहरण",
+  "templates.channel": "चैनल",
+  "templates.allChannels": "सभी चैनल",
+  "templates.emptyGlobal": "कोई टेम्पलेट नहीं मिला।",
   "templates.loadFailed": "टेम्पलेट लोड करने में विफल",
 
   "confirm.confirm": "पुष्टि करें",

@@ -115,7 +115,7 @@
               color="neutral"
               variant="soft"
               block
-              :to="`/channels/${channelId}/templates`"
+              :to="`/templates?channelId=${channelId}`"
             />
           </template>
 

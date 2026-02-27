@@ -66,6 +66,7 @@ const navItems = computed<NavigationMenuItem[][]>(() => [
     { label: t("nav.conversations"), icon: "i-lucide-message-square", to: "/conversations", active: route.path.startsWith("/conversations"), badge: totalUnread.value > 0 ? String(totalUnread.value) : undefined },
     { label: t("nav.contacts"), icon: "i-lucide-users", to: "/contacts", active: route.path.startsWith("/contacts") },
     { label: t("nav.channels"), icon: "i-lucide-radio", to: "/channels", active: route.path.startsWith("/channels") },
+    { label: t("nav.templates"), icon: "i-lucide-file-text", to: "/templates", active: route.path.startsWith("/templates") },
   ],
   [
     { label: t("nav.settings"), icon: "i-lucide-settings", to: "/settings", active: route.path.startsWith("/settings") },

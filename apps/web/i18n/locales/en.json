@@ -49,6 +49,7 @@
   "contacts.unknown": "Unknown",
 
   "nav.channels": "Channels",
+  "nav.templates": "Templates",
 
   "channels.title": "Channels",
   "channels.empty": "No channels configured",
@@ -220,6 +221,9 @@
   "templates.charCount": "{count}/{max}",
   "templates.buttonCopyCode": "Copy Code",
   "templates.buttonCopyCodePlaceholder": "Code example",
+  "templates.channel": "Channel",
+  "templates.allChannels": "All channels",
+  "templates.emptyGlobal": "No templates found.",
   "templates.loadFailed": "Failed to load template",
 
   "confirm.confirm": "Confirm",

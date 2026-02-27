@@ -49,6 +49,7 @@
   "contacts.unknown": "غير معروف",
 
   "nav.channels": "القنوات",
+  "nav.templates": "القوالب",
 
   "channels.title": "القنوات",
   "channels.empty": "لا توجد قنوات مهيأة",
@@ -220,6 +221,9 @@
   "templates.charCount": "{count}/{max}",
   "templates.buttonCopyCode": "نسخ الرمز",
   "templates.buttonCopyCodePlaceholder": "مثال الرمز",
+  "templates.channel": "القناة",
+  "templates.allChannels": "جميع القنوات",
+  "templates.emptyGlobal": "لا توجد قوالب.",
   "templates.loadFailed": "فشل تحميل القالب",
 
   "confirm.confirm": "تأكيد",

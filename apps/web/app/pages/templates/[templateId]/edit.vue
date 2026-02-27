@@ -7,7 +7,7 @@
             icon="i-lucide-arrow-left"
             variant="ghost"
             color="neutral"
-            :to="`/channels/${channelId}/templates/${templateId}`"
+            :to="`/templates/${templateId}`"
           />
         </template>
         <template #right>
@@ -33,7 +33,7 @@
               :label="$t('templates.cancel')"
               color="neutral"
               variant="soft"
-              :to="`/channels/${channelId}/templates/${templateId}`"
+              :to="`/templates/${templateId}`"
             />
           </template>
         </TemplatesTemplateForm>
@@ -43,38 +43,38 @@
 </template>
 
 <script setup lang="ts">
-import type { WhatsAppTemplateItem } from "~/types/api";
+import type { TemplateWithChannel } from "~/types/api";
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const channelId = route.params.id as string;
 const templateId = route.params.templateId as string;
-const { fetchTemplate, updateTemplate } = useTemplates();
+const { fetchTemplateById, updateTemplate } = useTemplates();
 
-const template = ref<WhatsAppTemplateItem | null>(null);
+const template = ref<TemplateWithChannel | null>(null);
 const loading = ref(true);
 const submitting = ref(false);
 
 async function loadTemplate() {
   loading.value = true;
   try {
-    template.value = await fetchTemplate(channelId, templateId);
+    template.value = await fetchTemplateById(templateId);
   } catch {
     toast.add({ title: t("templates.loadFailed"), color: "error" });
-    router.push(`/channels/${channelId}/templates`);
+    router.push("/templates");
   } finally {
     loading.value = false;
   }
 }
 
 async function onSubmit(data: { name: string; language: string; category: string; components: Record<string, unknown>[] }) {
+  if (!template.value) return;
   submitting.value = true;
   try {
-    await updateTemplate(channelId, templateId, { components: data.components });
+    await updateTemplate(template.value.channelId, templateId, { components: data.components });
     toast.add({ title: t("templates.updated"), color: "success" });
-    router.push(`/channels/${channelId}/templates/${templateId}`);
+    router.push(`/templates/${templateId}`);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : t("templates.updateFailed");
     toast.add({ title: message, color: "error" });

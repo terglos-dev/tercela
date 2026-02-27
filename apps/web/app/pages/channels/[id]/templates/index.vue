@@ -68,14 +68,14 @@
                 variant="ghost"
                 color="neutral"
                 size="xs"
-                :to="`/channels/${channelId}/templates/${row.original.id}`"
+                :to="`/templates/${row.original.id}`"
               />
               <UButton
                 icon="i-lucide-pencil"
                 variant="ghost"
                 color="neutral"
                 size="xs"
-                :to="`/channels/${channelId}/templates/${row.original.id}/edit`"
+                :to="`/templates/${row.original.id}/edit`"
               />
               <UButton
                 icon="i-lucide-trash-2"
