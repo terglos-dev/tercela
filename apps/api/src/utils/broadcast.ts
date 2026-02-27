@@ -21,6 +21,16 @@ export function broadcastNewMessage(conversationId: string, message: unknown) {
   );
 }
 
+export function broadcastUnreadUpdate(userId: string) {
+  const server = getServer();
+  if (!server) return;
+
+  server.publish(
+    "conversations",
+    JSON.stringify({ type: "unread:updated", payload: { userId } }),
+  );
+}
+
 export function broadcastMessageStatus(conversationId: string, messageId: string, status: string) {
   const server = getServer();
   if (!server) return;

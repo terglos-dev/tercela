@@ -35,7 +35,13 @@
               :to="`/conversations/${conv.id}`"
               class="flex justify-center py-2.5 rounded-lg transition-colors hover:bg-[var(--ui-bg-elevated)]"
             >
-              <UAvatar :alt="conv.contact?.name || '?'" size="sm" :color="avatarColor(conv.contact?.name || conv.id)" />
+              <div class="relative">
+                <UAvatar :alt="conv.contact?.name || '?'" size="sm" :color="avatarColor(conv.contact?.name || conv.id)" />
+                <span
+                  v-if="conv.unreadCount > 0"
+                  class="absolute -top-1 -right-1 size-4 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold leading-none"
+                >{{ conv.unreadCount > 9 ? '9+' : conv.unreadCount }}</span>
+              </div>
             </NuxtLink>
           </div>
 
@@ -61,7 +67,13 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center justify-between gap-2">
                     <span class="font-medium text-sm truncate">{{ conv.contact?.name || (conv.contact?.phone ? phoneWithFlag(conv.contact.phone) : $t("conversations.unknown")) }}</span>
-                    <span class="text-[10px] text-[var(--ui-text-dimmed)] shrink-0">{{ timeAgo(conv.lastMessageAt || conv.createdAt, locale) }}</span>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <span class="text-[10px] text-[var(--ui-text-dimmed)]">{{ timeAgo(conv.lastMessageAt || conv.createdAt, locale) }}</span>
+                      <span
+                        v-if="conv.unreadCount > 0"
+                        class="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none px-1"
+                      >{{ conv.unreadCount }}</span>
+                    </div>
                   </div>
                   <div class="flex items-center justify-between gap-2 mt-1">
                     <span v-if="conv.contact?.phone && conv.contact?.name" class="text-xs text-[var(--ui-text-dimmed)] truncate">{{ phoneWithFlag(conv.contact.phone) }}</span>
@@ -88,6 +100,7 @@
 </template>
 
 <script setup lang="ts">
+import type { Serialized, Message } from "@tercela/shared";
 import { avatarColor } from "~/utils/avatar";
 import { timeAgo } from "~/utils/time";
 import { phoneWithFlag } from "~/utils/phone";
@@ -116,5 +129,13 @@ onMounted(() => {
   fetchConversations();
   subscribe("conversations");
   on("conversation:updated", () => fetchConversations());
+  on("message:new", (event) => {
+    const msg = event.payload as Serialized<Message>;
+    if (msg.direction === "inbound") {
+      const conv = conversations.value.find((c) => c.id === msg.conversationId);
+      if (conv) conv.unreadCount = (conv.unreadCount ?? 0) + 1;
+    }
+  });
+  on("unread:updated", () => fetchConversations());
 });
 </script>

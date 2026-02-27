@@ -48,7 +48,13 @@
                 @click="conv.id === conversationId && scrollToBottom()"
               >
                 <div v-if="conv.id === conversationId" class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[var(--ui-color-primary-500)]" />
-                <UAvatar :alt="conv.contact?.name || '?'" size="sm" :color="avatarColor(conv.contact?.name || conv.id)" />
+                <div class="relative">
+                  <UAvatar :alt="conv.contact?.name || '?'" size="sm" :color="avatarColor(conv.contact?.name || conv.id)" />
+                  <span
+                    v-if="conv.unreadCount > 0"
+                    class="absolute -top-1 -right-1 size-4 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold leading-none"
+                  >{{ conv.unreadCount > 9 ? '9+' : conv.unreadCount }}</span>
+                </div>
               </NuxtLink>
             </template>
 
@@ -69,7 +75,13 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center justify-between gap-2">
                     <span class="font-medium text-sm truncate">{{ conv.contact?.name || (conv.contact?.phone ? phoneWithFlag(conv.contact.phone) : $t("conversations.unknown")) }}</span>
-                    <span class="text-[10px] text-[var(--ui-text-dimmed)] shrink-0">{{ timeAgo(conv.lastMessageAt || conv.createdAt, locale) }}</span>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <span class="text-[10px] text-[var(--ui-text-dimmed)]">{{ timeAgo(conv.lastMessageAt || conv.createdAt, locale) }}</span>
+                      <span
+                        v-if="conv.unreadCount > 0"
+                        class="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none px-1"
+                      >{{ conv.unreadCount }}</span>
+                    </div>
                   </div>
                   <div class="flex items-center justify-between gap-2 mt-1">
                     <span v-if="conv.contact?.phone && conv.contact?.name" class="text-xs text-[var(--ui-text-dimmed)] truncate">{{ phoneWithFlag(conv.contact.phone) }}</span>
@@ -263,6 +275,7 @@ const conversationId = computed(() => route.params.id as string);
 const token = useCookie("auth_token");
 
 const { conversations, loadingMore: convLoadingMore, hasMore: convHasMore, fetchConversations, loadMore: loadMoreConversations, updateConversation } = useConversations();
+const { markAsRead } = useUnreadCounts();
 const convListEl = ref<HTMLElement>();
 const panelCollapsed = useCookie<boolean>("conv_panel_collapsed", { default: () => false });
 const { messages, loading: messagesLoading, loadingMore, hasMore, fetchMessages, loadMore, sendMessage } = useMessages();
@@ -439,6 +452,7 @@ watch(conversationId, async (id) => {
     } catch (e) {
       messagesError.value = e instanceof Error ? e.message : t("chat.loadFailed");
     }
+    markAsRead(id);
     subscribe(`conversation:${id}`);
   }
 }, { immediate: true });
@@ -450,6 +464,10 @@ onMounted(() => {
     if (msg.conversationId === conversationId.value && !messages.value.some((m) => m.id === msg.id)) {
       messages.value.push(msg);
       scrollToBottom(true);
+      if (msg.direction === "inbound") markAsRead(conversationId.value);
+    } else if (msg.direction === "inbound") {
+      const conv = conversations.value.find((c) => c.id === msg.conversationId);
+      if (conv) conv.unreadCount = (conv.unreadCount ?? 0) + 1;
     }
   });
   on("message:status", (event) => {
@@ -459,6 +477,7 @@ onMounted(() => {
       msg.status = status;
     }
   });
+  on("unread:updated", () => fetchConversations());
 });
 
 onUnmounted(() => {

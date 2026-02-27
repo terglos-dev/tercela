@@ -58,10 +58,11 @@ import { avatarColor } from "~/utils/avatar";
 
 const { t } = useI18n();
 const { user, logout } = useAuth();
+const { totalUnread } = useUnreadCounts();
 
 const navItems = computed<NavigationMenuItem[][]>(() => [
   [
-    { label: t("nav.conversations"), icon: "i-lucide-message-square", to: "/conversations" },
+    { label: t("nav.conversations"), icon: "i-lucide-message-square", to: "/conversations", badge: totalUnread.value > 0 ? String(totalUnread.value) : undefined },
     { label: t("nav.contacts"), icon: "i-lucide-users", to: "/contacts" },
     { label: t("nav.channels"), icon: "i-lucide-radio", to: "/channels" },
   ],

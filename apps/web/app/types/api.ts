@@ -4,6 +4,7 @@ export interface ConversationListItem {
   lastMessageAt: string | null;
   createdAt: string;
   assignedTo: string | null;
+  unreadCount: number;
   contact: {
     id: string;
     name: string | null;
