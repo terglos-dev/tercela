@@ -16,66 +16,47 @@
 
     <template #body>
       <div class="p-6">
-        <UTable
-          v-if="!loading && channels.length > 0"
-          :data="channels"
-          :columns="columns"
-          sticky
-          class="cursor-pointer"
-          @select="onRowClick"
-        >
-          <template #name-cell="{ row }">
-            <div>
-              <span>{{ row.original.name }}</span>
-              <p v-if="getVerifiedName(row.original)" class="text-xs text-[var(--ui-text-dimmed)]">
-                {{ getVerifiedName(row.original) }}
-              </p>
-            </div>
-          </template>
-          <template #phone-cell="{ row }">
-            <span v-if="getDisplayPhone(row.original)" class="whitespace-nowrap">
-              {{ phoneWithFlag(getDisplayPhone(row.original)) }}
-            </span>
-            <span v-else class="text-[var(--ui-text-dimmed)]">—</span>
-          </template>
-          <template #type-cell="{ row }">
-            <UBadge color="info" variant="subtle" size="xs" :icon="channelIcon(row.original.type)">
-              {{ row.original.type }}
-            </UBadge>
-          </template>
-          <template #isActive-cell="{ row }">
-            <div class="flex items-center gap-2" @click.stop>
-              <USwitch
-                :model-value="row.original.isActive"
-                :loading="togglingId === row.original.id"
-                size="sm"
-                @update:model-value="onToggle(row.original)"
-              />
-              <span class="text-xs" :class="row.original.isActive ? 'text-[var(--color-success)]' : 'text-[var(--ui-text-dimmed)]'">
-                {{ row.original.isActive ? $t('channels.active') : $t('channels.inactive') }}
-              </span>
-            </div>
-          </template>
-          <template #createdAt-cell="{ row }">
-            {{ new Date(row.original.createdAt).toLocaleDateString(locale) }}
-          </template>
-          <template #actions-cell="{ row }">
-            <div class="flex items-center" @click.stop>
-              <UButton
-                icon="i-lucide-trash-2"
-                color="error"
-                variant="ghost"
-                size="xs"
-                @click="confirmDelete(row.original)"
-              />
-            </div>
-          </template>
-        </UTable>
-
-        <div v-else-if="loading" class="flex items-center justify-center py-20">
-          <UIcon name="i-lucide-loader-2" class="animate-spin size-5 text-[var(--ui-text-muted)]" />
+        <!-- Channel cards grid -->
+        <div v-if="!loading && channels.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <ChannelsChannelCard
+            v-for="ch in channels"
+            :key="ch.id"
+            :channel="ch"
+            :toggling="togglingId === ch.id"
+            :health-dot-class="healthDotClass(ch.id)"
+            :health-tooltip="healthTooltip(ch.id)"
+            @navigate="onCardClick"
+            @toggle="onToggle"
+            @delete="confirmDelete"
+          />
         </div>
 
+        <!-- Loading skeletons -->
+        <div v-else-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div
+            v-for="i in 3"
+            :key="i"
+            class="rounded-xl border border-[var(--ui-border)] bg-[var(--ui-bg)] p-5 animate-pulse"
+          >
+            <div class="flex items-start gap-3">
+              <div class="size-10 rounded-lg bg-[var(--ui-bg-elevated)]" />
+              <div class="flex-1 space-y-2">
+                <div class="h-4 w-2/3 rounded bg-[var(--ui-bg-elevated)]" />
+                <div class="h-3 w-1/2 rounded bg-[var(--ui-bg-elevated)]" />
+              </div>
+            </div>
+            <div class="mt-4 space-y-2">
+              <div class="h-3 w-3/4 rounded bg-[var(--ui-bg-elevated)]" />
+              <div class="h-3 w-1/3 rounded bg-[var(--ui-bg-elevated)]" />
+              <div class="h-3 w-1/4 rounded bg-[var(--ui-bg-elevated)]" />
+            </div>
+            <div class="mt-4 pt-3 border-t border-[var(--ui-border)]">
+              <div class="h-5 w-20 rounded bg-[var(--ui-bg-elevated)]" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
         <div v-else class="flex flex-col items-center justify-center py-20 gap-2 text-[var(--ui-text-muted)]">
           <UIcon name="i-lucide-radio" class="size-10" />
           <span class="text-sm">{{ $t("channels.empty") }}</span>
@@ -127,45 +108,20 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
 import type { ChannelListItem } from "~/types/api";
-import { phoneWithFlag } from "~/utils/phone";
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const router = useRouter();
 const toast = useToast();
-const { channels, loading, fetchChannels, deleteChannel, toggleChannel } = useChannels();
+const { channels, loading, healthMap, fetchChannels, deleteChannel, toggleChannel, checkAllHealth } = useChannels();
 
 const togglingId = ref<string | null>(null);
 const deleting = ref(false);
 const deleteModalOpen = ref(false);
 const channelToDelete = ref<ChannelListItem | null>(null);
 
-const columns = computed<TableColumn<ChannelListItem>[]>(() => [
-  { accessorKey: "name", header: t("channels.name") },
-  { id: "phone", header: t("channels.phoneNumber") },
-  { accessorKey: "type", header: t("channels.type") },
-  { accessorKey: "isActive", header: t("channels.status") },
-  { accessorKey: "createdAt", header: t("channels.created") },
-  { id: "actions", header: t("channels.actions") },
-]);
-
-function getDisplayPhone(ch: ChannelListItem): string {
-  return (ch.config as Record<string, string>)?.displayPhoneNumber || "";
-}
-
-function getVerifiedName(ch: ChannelListItem): string {
-  return (ch.config as Record<string, string>)?.verifiedName || "";
-}
-
-function channelIcon(type: string) {
-  if (type === "whatsapp") return "i-lucide-message-circle";
-  if (type === "instagram") return "i-lucide-instagram";
-  return "i-lucide-globe";
-}
-
-function onRowClick(row: { original: ChannelListItem }) {
-  router.push(`/channels/${row.original.id}`);
+function onCardClick(ch: ChannelListItem) {
+  router.push(`/channels/${ch.id}`);
 }
 
 async function onToggle(ch: ChannelListItem) {
@@ -204,5 +160,25 @@ async function onDelete() {
   }
 }
 
-onMounted(() => fetchChannels());
+function healthDotClass(id: string) {
+  const h = healthMap.value[id];
+  if (!h) return "bg-gray-400 animate-pulse";
+  return h.status === "connected" ? "bg-green-500" : "bg-red-500";
+}
+
+function healthTooltip(id: string) {
+  const h = healthMap.value[id];
+  if (!h) return t("channels.healthChecking");
+  return h.status === "connected"
+    ? t("channels.healthConnected")
+    : h.reason || t("channels.healthDisconnected");
+}
+
+onMounted(async () => {
+  await fetchChannels();
+  const whatsappIds = channels.value
+    .filter((ch) => ch.type === "whatsapp")
+    .map((ch) => ch.id);
+  if (whatsappIds.length) checkAllHealth(whatsappIds);
+});
 </script>

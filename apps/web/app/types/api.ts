@@ -27,6 +27,12 @@ export interface ChannelListItem {
   updatedAt: string;
 }
 
+export interface ChannelHealth {
+  status: "connected" | "disconnected";
+  tokenExpiresAt: string | null;
+  reason?: string;
+}
+
 export interface UserListItem {
   id: string;
   name: string;

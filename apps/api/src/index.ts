@@ -3,6 +3,7 @@ import { autoMigrate } from "./db/migrate";
 import { autoSeed } from "./db/seeders";
 import { db } from "./db";
 import { app, websocket } from "./app";
+import { refreshChannelTokens } from "./services/channel";
 
 declare global {
   var __bunServer: ReturnType<typeof Bun.serve> | undefined;
@@ -21,6 +22,16 @@ async function start() {
   globalThis.__bunServer = server;
 
   console.log(`🚀 Tercela API running on http://localhost:${server.port}`);
+
+  // Refresh expiring WhatsApp tokens on boot, then daily
+  refreshChannelTokens().catch((err) =>
+    console.warn("[token-refresh] Boot check failed:", err),
+  );
+  setInterval(() => {
+    refreshChannelTokens().catch((err) =>
+      console.warn("[token-refresh] Scheduled check failed:", err),
+    );
+  }, 24 * 60 * 60 * 1000);
 }
 
 start().catch((err) => {

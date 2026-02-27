@@ -5,6 +5,7 @@ import { channels, conversations, messages } from "../db/schema";
 import { env } from "../env";
 import { success, error } from "../utils/response";
 import { wrapSuccess, ErrorResponseSchema } from "../utils/openapi-schemas";
+import { exchangeForLongLivedToken, verifyChannelToken } from "../services/channel";
 
 const channelsRouter = new OpenAPIHono();
 
@@ -90,6 +91,47 @@ channelsRouter.openapi(
     const [channel] = await db.select().from(channels).where(eq(channels.id, id)).limit(1);
     if (!channel) return error(c, "Channel not found", 404);
     return success(c, serializeChannel(channel), 200);
+  },
+);
+
+// GET /:id/health
+const HealthResultSchema = z.object({
+  status: z.enum(["connected", "disconnected"]),
+  tokenExpiresAt: z.string().nullable(),
+  reason: z.string().optional(),
+});
+
+channelsRouter.openapi(
+  createRoute({
+    method: "get",
+    path: "/{id}/health",
+    tags: ["Channels"],
+    summary: "Check channel health (token validity)",
+    request: { params: IdParam },
+    responses: {
+      200: {
+        description: "Health check result",
+        content: { "application/json": { schema: wrapSuccess(HealthResultSchema) } },
+      },
+      404: {
+        description: "Channel not found",
+        content: { "application/json": { schema: ErrorResponseSchema } },
+      },
+      400: {
+        description: "Unsupported channel type",
+        content: { "application/json": { schema: ErrorResponseSchema } },
+      },
+    },
+  }),
+  async (c) => {
+    const { id } = c.req.valid("param");
+    const [channel] = await db.select().from(channels).where(eq(channels.id, id)).limit(1);
+    if (!channel) return error(c, "Channel not found", 404);
+    if (channel.type !== "whatsapp") return error(c, "Health check only supported for WhatsApp channels", 400);
+
+    const config = channel.config as unknown as import("@tercela/shared").WhatsAppChannelConfig;
+    const result = await verifyChannelToken(config);
+    return success(c, result, 200);
   },
 );
 
@@ -349,11 +391,26 @@ channelsRouter.openapi(
     },
   }),
   async (c) => {
-    const { accessToken, phoneNumberId, wabaId, name } = c.req.valid("json");
+    const { accessToken: shortToken, phoneNumberId, wabaId, name } = c.req.valid("json");
 
-    // 1. Fetch phone number details
+    // 1. Exchange short-lived token for long-lived token (~60 days)
+    let longLivedToken: string;
+    let tokenExpiresAt: string;
+    try {
+      const exchanged = await exchangeForLongLivedToken(shortToken);
+      longLivedToken = exchanged.accessToken;
+      tokenExpiresAt = exchanged.expiresAt;
+      console.log(`[meta/connect] Token exchanged, expires ${tokenExpiresAt}`);
+    } catch (err) {
+      // Fall back to the original token if exchange fails (e.g. missing META_APP_ID/SECRET)
+      console.warn(`[meta/connect] Token exchange failed, using short-lived token: ${err instanceof Error ? err.message : err}`);
+      longLivedToken = shortToken;
+      tokenExpiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(); // ~2h
+    }
+
+    // 2. Fetch phone number details (use long-lived token)
     const phoneRes = await fetch(
-      `https://graph.facebook.com/v21.0/${phoneNumberId}?access_token=${accessToken}`,
+      `https://graph.facebook.com/v21.0/${phoneNumberId}?access_token=${longLivedToken}`,
     );
     const phoneData = (await phoneRes.json()) as Record<string, unknown>;
 
@@ -365,12 +422,12 @@ channelsRouter.openapi(
     const verifiedName = (phoneData.verified_name as string) || "";
     const displayPhone = (phoneData.display_phone_number as string) || "";
 
-    // 2. Subscribe app to WABA webhooks
+    // 3. Subscribe app to WABA webhooks
     const subRes = await fetch(`https://graph.facebook.com/v21.0/${wabaId}/subscribed_apps`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${longLivedToken}`,
       },
     });
 
@@ -380,7 +437,7 @@ channelsRouter.openapi(
       return error(c, msg, 400);
     }
 
-    // 3. Generate verify token and create channel
+    // 4. Generate verify token and create channel
     const verifyToken = crypto.randomUUID();
     const channelName = name || verifiedName || `WhatsApp ${displayPhone}`;
 
@@ -391,19 +448,110 @@ channelsRouter.openapi(
         name: channelName,
         config: {
           phoneNumberId,
-          accessToken,
+          accessToken: longLivedToken,
           wabaId,
           verifyToken,
           businessAccountId: wabaId,
           appSecret: "",
           verifiedName,
           displayPhoneNumber: displayPhone,
+          tokenExpiresAt,
         },
         isActive: true,
       })
       .returning();
 
     return success(c, serializeChannel(channel), 201);
+  },
+);
+
+// POST /meta/resync — Resync a WhatsApp channel with a new access token
+const metaResyncSchema = z.object({
+  channelId: z.string().min(1).openapi({ example: "uuid" }),
+  accessToken: z.string().min(1).openapi({ example: "EAAx..." }),
+});
+
+channelsRouter.openapi(
+  createRoute({
+    method: "post",
+    path: "/meta/resync",
+    tags: ["Channels"],
+    summary: "Resync a WhatsApp channel with a fresh access token",
+    request: {
+      body: { content: { "application/json": { schema: metaResyncSchema } } },
+    },
+    responses: {
+      200: {
+        description: "Channel resynced",
+        content: { "application/json": { schema: wrapSuccess(ChannelSchema) } },
+      },
+      404: {
+        description: "Channel not found",
+        content: { "application/json": { schema: ErrorResponseSchema } },
+      },
+      400: {
+        description: "Invalid input or Meta API error",
+        content: { "application/json": { schema: ErrorResponseSchema } },
+      },
+    },
+  }),
+  async (c) => {
+    const { channelId, accessToken: shortToken } = c.req.valid("json");
+
+    // 1. Find the channel
+    const [channel] = await db.select().from(channels).where(eq(channels.id, channelId)).limit(1);
+    if (!channel) return error(c, "Channel not found", 404);
+    if (channel.type !== "whatsapp") return error(c, "Resync only supported for WhatsApp channels", 400);
+
+    const config = channel.config as Record<string, unknown>;
+
+    // 2. Exchange short-lived token for long-lived token
+    let longLivedToken: string;
+    let tokenExpiresAt: string;
+    try {
+      const exchanged = await exchangeForLongLivedToken(shortToken);
+      longLivedToken = exchanged.accessToken;
+      tokenExpiresAt = exchanged.expiresAt;
+      console.log(`[meta/resync] Token exchanged for channel ${channelId}, expires ${tokenExpiresAt}`);
+    } catch (err) {
+      console.warn(`[meta/resync] Token exchange failed, using short-lived token: ${err instanceof Error ? err.message : err}`);
+      longLivedToken = shortToken;
+      tokenExpiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+    }
+
+    // 3. Re-subscribe app to WABA webhooks
+    const wabaId = (config.wabaId || config.businessAccountId) as string;
+    if (wabaId) {
+      const subRes = await fetch(`https://graph.facebook.com/v21.0/${wabaId}/subscribed_apps`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${longLivedToken}`,
+        },
+      });
+
+      if (!subRes.ok) {
+        const subData = (await subRes.json()) as Record<string, unknown>;
+        const msg = (subData.error as Record<string, string>)?.message || "Failed to re-subscribe to WABA webhooks";
+        return error(c, msg, 400);
+      }
+    }
+
+    // 4. Update channel config with new token
+    const [updated] = await db
+      .update(channels)
+      .set({
+        config: {
+          ...config,
+          accessToken: longLivedToken,
+          tokenExpiresAt,
+        },
+        updatedAt: new Date(),
+      })
+      .where(eq(channels.id, channelId))
+      .returning();
+
+    return success(c, serializeChannel(updated), 200);
   },
 );
 

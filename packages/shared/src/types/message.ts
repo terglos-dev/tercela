@@ -1,5 +1,6 @@
 export type MessageDirection = "inbound" | "outbound";
-export type MessageType = "text" | "image" | "audio" | "video" | "document" | "location" | "template";
+export type MessageType = "text" | "image" | "audio" | "video" | "document" | "location" | "template"
+  | "sticker" | "reaction" | "contacts" | "interactive" | "button" | "order" | "unknown";
 export type MessageStatus = "pending" | "sent" | "delivered" | "read" | "failed";
 
 export interface Message {

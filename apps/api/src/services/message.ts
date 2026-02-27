@@ -2,8 +2,15 @@ import { eq, and, lt, desc } from "drizzle-orm";
 import { db } from "../db";
 import { messages, conversations, contacts, channels } from "../db/schema";
 import { getAdapter } from "../channels";
-import type { ChannelType, MessageType } from "@tercela/shared";
+import type { ChannelType, MessageType, MessageStatus } from "@tercela/shared";
 import type { IncomingMessage } from "../channels/types";
+
+const STATUS_ORDER: Record<string, number> = {
+  pending: 0,
+  sent: 1,
+  delivered: 2,
+  read: 3,
+};
 
 export async function listMessages(
   conversationId: string,
@@ -100,4 +107,40 @@ export async function sendOutboundMessage(conversationId: string, content: strin
     .where(eq(conversations.id, conversationId));
 
   return msg;
+}
+
+export async function updateMessageStatus(externalId: string, newStatus: MessageStatus) {
+  console.log("[message service] updateMessageStatus:", { externalId, newStatus });
+
+  const [msg] = await db
+    .select()
+    .from(messages)
+    .where(eq(messages.externalId, externalId))
+    .limit(1);
+
+  if (!msg) {
+    console.log("[message service] No message found for externalId:", externalId);
+    return null;
+  }
+
+  console.log("[message service] Found message:", { id: msg.id, currentStatus: msg.status, conversationId: msg.conversationId });
+
+  // "failed" is terminal — always accept it
+  if (newStatus !== "failed") {
+    const currentRank = STATUS_ORDER[msg.status] ?? -1;
+    const newRank = STATUS_ORDER[newStatus] ?? -1;
+    if (newRank <= currentRank) {
+      console.log("[message service] Skipping regression:", msg.status, "→", newStatus);
+      return null;
+    }
+  }
+
+  const [updated] = await db
+    .update(messages)
+    .set({ status: newStatus })
+    .where(eq(messages.id, msg.id))
+    .returning();
+
+  console.log("[message service] Status updated:", msg.status, "→", updated.status);
+  return updated;
 }

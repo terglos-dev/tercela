@@ -19,4 +19,5 @@ export interface WhatsAppChannelConfig {
   displayPhoneNumber?: string;
   verifiedName?: string;
   wabaId?: string;
+  tokenExpiresAt?: string;
 }

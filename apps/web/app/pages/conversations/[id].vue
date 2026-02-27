@@ -109,9 +109,57 @@
                     ? 'bg-[var(--ui-color-primary-500)] text-white rounded-br-md'
                     : 'bg-[var(--ui-bg-elevated)] rounded-bl-md'"
                 >
-                  <div class="break-words">{{ msg.content }}</div>
-                  <div class="text-[10px] mt-1 text-right opacity-60">
-                    {{ formatTime(msg.createdAt) }}
+                  <!-- Message content by type -->
+                  <div class="break-words">
+                    <template v-if="msg.type === 'text'">{{ msg.content }}</template>
+                    <template v-else-if="msg.type === 'reaction'">
+                      <span class="text-2xl">{{ parseReaction(msg.content) }}</span>
+                    </template>
+                    <template v-else-if="msg.type === 'interactive' || msg.type === 'button'">
+                      {{ parseInteractive(msg.content) }}
+                    </template>
+                    <template v-else-if="msg.type === 'location'">
+                      <span class="flex items-center gap-1">
+                        <UIcon name="i-lucide-map-pin" class="size-3.5 shrink-0" />
+                        {{ parseLocation(msg.content) }}
+                      </span>
+                    </template>
+                    <template v-else>
+                      <span class="flex items-center gap-1">
+                        <UIcon :name="messageTypeIcon(msg.type)" class="size-3.5 shrink-0" />
+                        {{ $t(`chat.type.${msg.type}`, msg.type) }}
+                      </span>
+                    </template>
+                  </div>
+                  <div class="flex items-center justify-end gap-1 mt-1">
+                    <span class="text-[10px] opacity-60">{{ formatTime(msg.createdAt) }}</span>
+                    <!-- Status indicator for outbound messages -->
+                    <template v-if="msg.direction === 'outbound'">
+                      <UIcon
+                        v-if="msg.status === 'failed'"
+                        name="i-lucide-x"
+                        class="size-3.5 text-red-400"
+                        :title="$t('chat.status.failed')"
+                      />
+                      <UIcon
+                        v-else-if="msg.status === 'read'"
+                        name="i-lucide-check-check"
+                        class="size-3.5 text-blue-400"
+                        :title="$t('chat.status.read')"
+                      />
+                      <UIcon
+                        v-else-if="msg.status === 'delivered'"
+                        name="i-lucide-check-check"
+                        class="size-3.5 opacity-60"
+                        :title="$t('chat.status.delivered')"
+                      />
+                      <UIcon
+                        v-else
+                        name="i-lucide-check"
+                        class="size-3.5 opacity-60"
+                        :title="$t('chat.status.sent')"
+                      />
+                    </template>
                   </div>
                 </div>
               </div>
@@ -141,7 +189,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Serialized, Message } from "@tercela/shared";
+import type { Serialized, Message, MessageStatus } from "@tercela/shared";
 import { avatarColor } from "~/utils/avatar";
 import { timeAgo } from "~/utils/time";
 
@@ -167,6 +215,46 @@ const currentConversation = computed(() =>
 
 function formatTime(date: string) {
   return new Date(date).toLocaleTimeString(locale.value, { hour: "2-digit", minute: "2-digit" });
+}
+
+function messageTypeIcon(type: string) {
+  const icons: Record<string, string> = {
+    image: "i-lucide-image",
+    audio: "i-lucide-headphones",
+    video: "i-lucide-video",
+    document: "i-lucide-file-text",
+    sticker: "i-lucide-smile",
+    contacts: "i-lucide-contact",
+    order: "i-lucide-shopping-cart",
+    unknown: "i-lucide-help-circle",
+  };
+  return icons[type] || "i-lucide-file";
+}
+
+function parseReaction(content: string): string {
+  try {
+    return JSON.parse(content).emoji || content;
+  } catch {
+    return content;
+  }
+}
+
+function parseInteractive(content: string): string {
+  try {
+    const data = JSON.parse(content);
+    return data.title || data.id || content;
+  } catch {
+    return content;
+  }
+}
+
+function parseLocation(content: string): string {
+  try {
+    const { latitude, longitude } = JSON.parse(content);
+    return `${latitude}, ${longitude}`;
+  } catch {
+    return content;
+  }
 }
 
 function statusColor(status?: string) {
@@ -229,6 +317,13 @@ onMounted(() => {
     if (msg.conversationId === conversationId.value && !messages.value.some((m) => m.id === msg.id)) {
       messages.value.push(msg);
       scrollToBottom();
+    }
+  });
+  on("message:status", (event) => {
+    const { id, status } = event.payload as { id: string; status: MessageStatus; conversationId: string };
+    const msg = messages.value.find((m) => m.id === id);
+    if (msg) {
+      msg.status = status;
     }
   });
 });

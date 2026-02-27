@@ -47,6 +47,51 @@
           <!-- WhatsApp read-only info -->
           <template v-if="channel.type === 'whatsapp'">
             <div class="space-y-4 rounded-lg border border-[var(--ui-border)] p-4">
+              <!-- Health section -->
+              <div>
+                <p class="text-sm font-medium text-[var(--ui-text-dimmed)] mb-1">{{ $t('channels.connection') }}</p>
+                <div class="flex items-center gap-2">
+                  <span
+                    class="inline-block size-2.5 rounded-full shrink-0"
+                    :class="!health ? 'bg-gray-400 animate-pulse' : health.status === 'connected' ? 'bg-green-500' : 'bg-red-500'"
+                  />
+                  <span v-if="!health" class="text-sm text-[var(--ui-text-muted)]">{{ $t('channels.healthChecking') }}</span>
+                  <span v-else-if="health.status === 'connected'" class="text-sm text-green-600">{{ $t('channels.healthConnected') }}</span>
+                  <span v-else class="text-sm text-red-600">{{ $t('channels.healthDisconnected') }}</span>
+                  <UButton
+                    icon="i-lucide-refresh-cw"
+                    variant="ghost"
+                    color="neutral"
+                    size="xs"
+                    :loading="healthChecking"
+                    @click="recheckHealth"
+                  />
+                </div>
+                <p v-if="health?.status === 'disconnected' && health.reason" class="text-xs text-red-500 mt-1">
+                  {{ health.reason }}
+                </p>
+                <UButton
+                  v-if="health?.status === 'disconnected' || tokenExpiringSoon"
+                  :label="$t('channels.resync')"
+                  icon="i-lucide-refresh-cw"
+                  color="warning"
+                  variant="soft"
+                  size="sm"
+                  :loading="resyncing"
+                  class="mt-2"
+                  @click="onResync"
+                />
+              </div>
+
+              <!-- Token expiration -->
+              <div v-if="health?.tokenExpiresAt">
+                <p class="text-sm font-medium text-[var(--ui-text-dimmed)] mb-1">{{ $t('channels.tokenExpiresAt') }}</p>
+                <p class="text-base" :class="tokenExpiringSoon ? 'text-amber-600 font-medium' : ''">
+                  {{ new Date(health.tokenExpiresAt).toLocaleDateString() }}
+                  <span v-if="tokenExpiringSoon" class="text-xs ml-1">({{ $t('channels.tokenExpiringSoon') }})</span>
+                </p>
+              </div>
+
               <div v-if="whatsappConfig.displayPhoneNumber">
                 <p class="text-sm font-medium text-[var(--ui-text-dimmed)] mb-1">{{ $t('channels.phoneNumber') }}</p>
                 <p class="text-base">{{ phoneWithFlag(whatsappConfig.displayPhoneNumber) }}</p>
@@ -120,7 +165,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ChannelListItem } from "~/types/api";
+import type { ChannelListItem, ChannelHealth } from "~/types/api";
 import { phoneWithFlag } from "~/utils/phone";
 
 const { t } = useI18n();
@@ -128,7 +173,7 @@ const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const api = useApi();
-const { updateChannel, deleteChannel } = useChannels();
+const { updateChannel, deleteChannel, checkHealth, resyncMeta } = useChannels();
 
 const channelId = route.params.id as string;
 const channel = ref<ChannelListItem | null>(null);
@@ -136,6 +181,9 @@ const loading = ref(true);
 const saving = ref(false);
 const deleting = ref(false);
 const deleteModalOpen = ref(false);
+const health = ref<ChannelHealth | null>(null);
+const healthChecking = ref(false);
+const resyncing = ref(false);
 
 const form = reactive({
   name: "",
@@ -147,6 +195,52 @@ const whatsappConfig = reactive({
   verifiedName: "",
   wabaId: "",
 });
+
+const tokenExpiringSoon = computed(() => {
+  if (!health.value?.tokenExpiresAt) return false;
+  const diff = new Date(health.value.tokenExpiresAt).getTime() - Date.now();
+  return diff > 0 && diff < 7 * 24 * 60 * 60 * 1000;
+});
+
+async function recheckHealth() {
+  healthChecking.value = true;
+  try {
+    health.value = await checkHealth(channelId);
+  } finally {
+    healthChecking.value = false;
+  }
+}
+
+async function onResync() {
+  const { $fb } = useNuxtApp();
+  if (!$fb) {
+    toast.add({ title: t("channels.metaError"), color: "error" });
+    return;
+  }
+
+  resyncing.value = true;
+  try {
+    const response = await ($fb as { login: (opts: Record<string, unknown>) => Promise<{ status: string; authResponse?: { accessToken?: string } }> }).login({
+      scope: "business_management,whatsapp_business_management,whatsapp_business_messaging",
+    });
+
+    if (response.status !== "connected" || !response.authResponse?.accessToken) {
+      toast.add({ title: t("channels.metaError"), color: "error" });
+      return;
+    }
+
+    await resyncMeta(channelId, response.authResponse.accessToken);
+    toast.add({ title: t("channels.resyncSuccess"), color: "success" });
+
+    // Re-check health with new token
+    health.value = await checkHealth(channelId);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : t("channels.resyncError");
+    toast.add({ title: message, color: "error" });
+  } finally {
+    resyncing.value = false;
+  }
+}
 
 onMounted(async () => {
   try {
@@ -161,6 +255,8 @@ onMounted(async () => {
       whatsappConfig.displayPhoneNumber = cfg.displayPhoneNumber || "";
       whatsappConfig.verifiedName = cfg.verifiedName || "";
       whatsappConfig.wabaId = cfg.wabaId || cfg.businessAccountId || "";
+
+      recheckHealth();
     }
   } finally {
     loading.value = false;

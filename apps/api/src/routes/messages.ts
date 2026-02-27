@@ -94,7 +94,10 @@ messagesRouter.openapi(
     const jwtPayload = c.get("jwtPayload");
     const senderId = jwtPayload.sub as string;
 
+    console.log("[messages] Sending outbound:", { conversationId: id, type: data.type, contentLength: data.content.length, senderId });
+
     const msg = await sendOutboundMessage(id, data.content, senderId, data.type);
+    console.log("[messages] Message saved:", { id: msg.id, externalId: msg.externalId, status: msg.status });
 
     const server = globalThis.__bunServer;
     if (server) {
@@ -109,6 +112,9 @@ messagesRouter.openapi(
           payload: { conversationId: id, lastMessageAt: new Date() },
         }),
       );
+      console.log("[messages] WS broadcast sent");
+    } else {
+      console.warn("[messages] No WS server — cannot broadcast");
     }
 
     return success(c, msg as unknown as MessageResponse, 201);

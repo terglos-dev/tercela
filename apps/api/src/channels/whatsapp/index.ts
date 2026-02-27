@@ -19,6 +19,8 @@ export const whatsappAdapter: ChannelAdapter = {
       body[message.type] = { link: message.content };
     }
 
+    console.log("[WA adapter] Sending to Meta API:", { to: message.to, type: message.type, phoneNumberId });
+
     const res = await fetch(
       `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
       {
@@ -31,7 +33,13 @@ export const whatsappAdapter: ChannelAdapter = {
       }
     );
 
-    const data = (await res.json()) as { messages?: { id: string }[] };
+    const data = (await res.json()) as { messages?: { id: string }[]; error?: { message: string; code: number } };
+
+    if (!res.ok) {
+      console.error("[WA adapter] Meta API error:", res.status, data.error ?? data);
+    } else {
+      console.log("[WA adapter] Meta API success, externalId:", data.messages?.[0]?.id);
+    }
 
     return {
       externalId: data.messages?.[0]?.id ?? "",
@@ -75,6 +83,34 @@ export const whatsappAdapter: ChannelAdapter = {
         latitude: msg.location?.latitude,
         longitude: msg.location?.longitude,
       });
+    } else if (msg.type === "sticker") {
+      type = "sticker";
+      content = msg.sticker?.id ?? "";
+    } else if (msg.type === "reaction") {
+      type = "reaction";
+      content = JSON.stringify({
+        emoji: msg.reaction?.emoji,
+        message_id: msg.reaction?.message_id,
+      });
+    } else if (msg.type === "contacts") {
+      type = "contacts";
+      content = JSON.stringify(msg.contacts ?? []);
+    } else if (msg.type === "interactive") {
+      type = "interactive";
+      const reply = msg.interactive?.button_reply || msg.interactive?.list_reply;
+      content = JSON.stringify({
+        type: msg.interactive?.type,
+        ...(reply ?? {}),
+      });
+    } else if (msg.type === "button") {
+      type = "button";
+      content = msg.button?.text ?? "";
+    } else if (msg.type === "order") {
+      type = "order";
+      content = JSON.stringify(msg.order ?? {});
+    } else {
+      type = "unknown";
+      content = JSON.stringify({ originalType: msg.type });
     }
 
     return {

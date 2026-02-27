@@ -1,8 +1,9 @@
-import type { ChannelListItem } from "~/types/api";
+import type { ChannelListItem, ChannelHealth } from "~/types/api";
 
 export function useChannels() {
   const channels = useState<ChannelListItem[]>("channels", () => []);
   const loading = useState("channels_loading", () => false);
+  const healthMap = useState<Record<string, ChannelHealth>>("channels_health", () => ({}));
   const api = useApi();
 
   async function fetchChannels() {
@@ -57,5 +58,25 @@ export function useChannels() {
     return await api.post<ChannelListItem>("/v1/channels/meta/connect", data);
   }
 
-  return { channels, loading, fetchChannels, createChannel, updateChannel, deleteChannel, toggleChannel, fetchMetaAccounts, connectMeta };
+  async function resyncMeta(channelId: string, accessToken: string) {
+    return await api.post<ChannelListItem>("/v1/channels/meta/resync", { channelId, accessToken });
+  }
+
+  async function checkHealth(channelId: string) {
+    try {
+      const result = await api.get<ChannelHealth>(`/v1/channels/${channelId}/health`);
+      healthMap.value = { ...healthMap.value, [channelId]: result };
+      return result;
+    } catch {
+      const failed: ChannelHealth = { status: "disconnected", tokenExpiresAt: null, reason: "Health check failed" };
+      healthMap.value = { ...healthMap.value, [channelId]: failed };
+      return failed;
+    }
+  }
+
+  async function checkAllHealth(ids: string[]) {
+    await Promise.allSettled(ids.map((id) => checkHealth(id)));
+  }
+
+  return { channels, loading, healthMap, fetchChannels, createChannel, updateChannel, deleteChannel, toggleChannel, fetchMetaAccounts, connectMeta, resyncMeta, checkHealth, checkAllHealth };
 }
