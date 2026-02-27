@@ -40,3 +40,20 @@ export interface UserListItem {
   role: string;
   createdAt: string;
 }
+
+export interface StorageConfig {
+  provider: string;
+  endpoint?: string;
+  region: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  pathPrefix?: string;
+}
+
+export interface SettingItem {
+  id: string;
+  key: string;
+  value: Record<string, unknown>;
+  updatedAt: string;
+}

@@ -12,6 +12,8 @@ import { conversationsRouter } from "./routes/conversations";
 import { messagesRouter } from "./routes/messages";
 import { usersRouter } from "./routes/users";
 import { channelsRouter } from "./routes/channels";
+import { settingsRouter } from "./routes/settings";
+import { mediaRouter } from "./routes/media";
 import { whatsappWebhook } from "./routes/webhooks/whatsapp";
 import type { ServerWebSocket } from "bun";
 import { handleWsOpen, handleWsMessage, handleWsClose, type WsData } from "./ws";
@@ -32,6 +34,7 @@ app.get("/health", (c) => success(c, { status: "ok" }, 200));
 
 // Public routes (no auth)
 app.route("/v1/auth", auth);
+app.route("/v1/media", mediaRouter); // Auth handled internally (token query param + Bearer)
 app.route("/webhooks/whatsapp", whatsappWebhook);
 
 // WebSocket (authenticated via ?token= query param)
@@ -71,7 +74,9 @@ app.use("/v1/channels/*", authMiddleware);
 app.use("/v1/contacts/*", authMiddleware);
 app.use("/v1/conversations/*", authMiddleware);
 app.use("/v1/users/*", authMiddleware);
+app.use("/v1/settings/*", authMiddleware);
 app.route("/v1/channels", channelsRouter);
+app.route("/v1/settings", settingsRouter);
 app.route("/v1/contacts", contactsRouter);
 app.route("/v1/conversations", conversationsRouter);
 app.route("/v1/conversations", messagesRouter);

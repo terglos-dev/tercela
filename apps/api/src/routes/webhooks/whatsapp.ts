@@ -4,10 +4,12 @@ import { db } from "../../db";
 import { channels } from "../../db/schema";
 import { env } from "../../env";
 import { getAdapter } from "../../channels";
+import { downloadWhatsAppMedia } from "../../channels/whatsapp";
 import { findOrCreateContact } from "../../services/contact";
 import { findOrCreateConversation } from "../../services/conversation";
 import { createInboundMessage, updateMessageStatus } from "../../services/message";
-import type { ChannelType, MessageStatus } from "@tercela/shared";
+import { getStorageConfig, uploadMedia } from "../../services/storage";
+import type { ChannelType, MessageStatus, MessageType } from "@tercela/shared";
 
 const whatsappWebhook = new OpenAPIHono();
 
@@ -137,6 +139,35 @@ whatsappWebhook.openapi(
     console.log("[WA webhook] parseIncoming result:", incoming ? { externalId: incoming.externalId, type: incoming.type, from: incoming.contactExternalId } : null);
 
     if (incoming) {
+      // Download media from WhatsApp and upload to S3 if storage is configured
+      const mediaTypes: MessageType[] = ["image", "audio", "video", "document", "sticker"];
+      if (mediaTypes.includes(incoming.type)) {
+        try {
+          const parsed = JSON.parse(incoming.content);
+          const storageConfig = await getStorageConfig();
+          if (parsed.mediaId && storageConfig) {
+            const accessToken = config.accessToken;
+            const { buffer, mimeType } = await downloadWhatsAppMedia(parsed.mediaId, accessToken);
+            const ext = mimeType.split("/")[1]?.split(";")[0] || "bin";
+            const now = new Date();
+            const datePath = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
+            const s3Key = `media/${datePath}/${crypto.randomUUID()}.${ext}`;
+            await uploadMedia(buffer, s3Key, mimeType);
+
+            incoming.content = JSON.stringify({
+              url: `/v1/media/${storageConfig.pathPrefix ? storageConfig.pathPrefix + s3Key : s3Key}`,
+              mimeType,
+              filename: parsed.filename || undefined,
+              caption: parsed.caption || undefined,
+              size: buffer.length,
+            });
+            console.log("[WA webhook] Media uploaded to S3:", s3Key);
+          }
+        } catch (err) {
+          console.error("[WA webhook] Media download/upload failed, keeping original content:", err);
+        }
+      }
+
       const contact = await findOrCreateContact({
         externalId: incoming.contactExternalId,
         channelType: "whatsapp" as ChannelType,

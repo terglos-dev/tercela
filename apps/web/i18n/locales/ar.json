@@ -113,5 +113,23 @@
   "settings.emailPlaceholder": "بريد{'@'}الشركة.كوم",
   "settings.passwordPlaceholder": "6 أحرف على الأقل",
   "settings.agentCreated": "تم إنشاء الوكيل",
-  "settings.createFailed": "فشل إنشاء الوكيل"
+  "settings.createFailed": "فشل إنشاء الوكيل",
+  "settings.storage": "التخزين",
+  "settings.storageDescription": "إعداد تخزين متوافق مع S3 لملفات الوسائط (صور، صوت، مستندات).",
+  "settings.storageProvider": "المزود",
+  "settings.storageEndpoint": "عنوان URL للنقطة النهائية",
+  "settings.storageRegion": "المنطقة",
+  "settings.storageBucket": "الحاوية",
+  "settings.storageAccessKey": "معرف مفتاح الوصول",
+  "settings.storageSecretKey": "مفتاح الوصول السري",
+  "settings.storagePathPrefix": "بادئة المسار",
+  "settings.storageTestConnection": "اختبار الاتصال",
+  "settings.storageTestSuccess": "الاتصال ناجح",
+  "settings.storageSave": "حفظ",
+  "settings.storageSaved": "تم حفظ إعدادات التخزين",
+  "settings.storageSaveFailed": "فشل حفظ إعدادات التخزين",
+
+  "chat.uploadFailed": "فشل رفع الملف",
+  "chat.attach": "إرفاق ملف",
+  "chat.downloading": "جارٍ التحميل..."
 }

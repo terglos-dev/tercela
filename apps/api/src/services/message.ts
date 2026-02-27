@@ -2,6 +2,7 @@ import { eq, and, lt, desc } from "drizzle-orm";
 import { db } from "../db";
 import { messages, conversations, contacts, channels } from "../db/schema";
 import { getAdapter } from "../channels";
+import { getPresignedUrl } from "./storage";
 import type { ChannelType, MessageType, MessageStatus } from "@tercela/shared";
 import type { IncomingMessage } from "../channels/types";
 
@@ -81,13 +82,30 @@ export async function sendOutboundMessage(conversationId: string, content: strin
 
   if (!contact || !channel) throw new Error("Contact or channel not found");
 
+  // For media types, generate presigned URL for the channel adapter
+  const mediaTypes: MessageType[] = ["image", "audio", "video", "document", "sticker"];
+  let adapterContent = content;
+
+  if (mediaTypes.includes(type)) {
+    try {
+      const parsed = JSON.parse(content);
+      if (parsed.url && parsed.url.startsWith("/v1/media/")) {
+        const s3Key = parsed.url.replace("/v1/media/", "");
+        adapterContent = await getPresignedUrl(s3Key);
+      }
+    } catch {
+      // Not JSON or no url — send content as-is
+    }
+  }
+
   const adapter = getAdapter(channel.type as ChannelType);
   const result = await adapter.sendMessage(channel.config as Record<string, unknown>, {
     to: contact.externalId,
     type,
-    content,
+    content: adapterContent,
   });
 
+  // Save the proxy URL (not the presigned URL) in the DB
   const [msg] = await db
     .insert(messages)
     .values({

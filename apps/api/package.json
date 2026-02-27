@@ -11,6 +11,8 @@
     "db:seed": "bun run src/db/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.999.0",
+    "@aws-sdk/s3-request-presigner": "^3.999.0",
     "@hono/zod-openapi": "^1.2.2",
     "@scalar/hono-api-reference": "^0.9.45",
     "@tercela/shared": "workspace:*",
