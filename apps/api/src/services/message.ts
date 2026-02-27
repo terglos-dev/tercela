@@ -1,6 +1,6 @@
 import { eq, and, lt, desc } from "drizzle-orm";
 import { db } from "../db";
-import { messages, conversations, contacts, channels } from "../db/schema";
+import { messages, conversations, contacts, channels, media } from "../db/schema";
 import { getAdapter } from "../channels";
 import { getPresignedUrl } from "./storage";
 import type { ChannelType, MessageType, MessageStatus } from "@tercela/shared";
@@ -23,18 +23,27 @@ export async function listMessages(
     ? and(eq(messages.conversationId, conversationId), lt(messages.createdAt, new Date(opts.before)))
     : eq(messages.conversationId, conversationId);
 
-  const result = await db
-    .select()
+  const rows = await db
+    .select({
+      message: messages,
+      media: media,
+    })
     .from(messages)
+    .leftJoin(media, eq(messages.mediaId, media.id))
     .where(where)
     .orderBy(desc(messages.createdAt))
     .limit(limit + 1);
 
-  const hasMore = result.length > limit;
-  if (hasMore) result.pop();
+  const hasMore = rows.length > limit;
+  if (hasMore) rows.pop();
 
   // Reverse to chronological order (oldest first)
-  result.reverse();
+  rows.reverse();
+
+  const result = rows.map((row) => ({
+    ...row.message,
+    media: row.media || null,
+  }));
 
   const nextCursor = hasMore && result.length > 0
     ? result[0].createdAt.toISOString()
@@ -43,7 +52,7 @@ export async function listMessages(
   return { data: result, nextCursor, hasMore };
 }
 
-export async function createInboundMessage(conversationId: string, incoming: IncomingMessage) {
+export async function createInboundMessage(conversationId: string, incoming: IncomingMessage, mediaId?: string) {
   const [msg] = await db
     .insert(messages)
     .values({
@@ -51,6 +60,7 @@ export async function createInboundMessage(conversationId: string, incoming: Inc
       direction: "inbound",
       type: incoming.type,
       content: incoming.content,
+      mediaId: mediaId || null,
       externalId: incoming.externalId,
       status: "delivered",
     })
@@ -64,7 +74,13 @@ export async function createInboundMessage(conversationId: string, incoming: Inc
   return msg;
 }
 
-export async function sendOutboundMessage(conversationId: string, content: string, senderId: string, type: MessageType = "text") {
+export async function sendOutboundMessage(
+  conversationId: string,
+  content: string,
+  senderId: string,
+  type: MessageType = "text",
+  mediaId?: string,
+) {
   const [row] = await db
     .select({
       convId: conversations.id,
@@ -83,19 +99,14 @@ export async function sendOutboundMessage(conversationId: string, content: strin
   const contact = { externalId: row.contactExternalId };
   const channel = { type: row.channelType, config: row.channelConfig };
 
-  // For media types, generate presigned URL for the channel adapter
-  const mediaTypes: MessageType[] = ["image", "audio", "video", "document", "sticker"];
+  // For media types, resolve presigned URL from media record for the channel adapter
   let adapterContent = content;
 
-  if (mediaTypes.includes(type)) {
-    try {
-      const parsed = JSON.parse(content);
-      if (parsed.url && parsed.url.startsWith("/v1/media/")) {
-        const s3Key = parsed.url.replace("/v1/media/", "");
-        adapterContent = await getPresignedUrl(s3Key);
-      }
-    } catch {
-      // Not JSON or no url — send content as-is
+  if (mediaId) {
+    const { getMediaById } = await import("./media");
+    const mediaRecord = await getMediaById(mediaId);
+    if (mediaRecord) {
+      adapterContent = await getPresignedUrl(mediaRecord.s3Key);
     }
   }
 
@@ -106,7 +117,6 @@ export async function sendOutboundMessage(conversationId: string, content: strin
     content: adapterContent,
   });
 
-  // Save the proxy URL (not the presigned URL) in the DB
   const [msg] = await db
     .insert(messages)
     .values({
@@ -114,6 +124,7 @@ export async function sendOutboundMessage(conversationId: string, content: strin
       direction: "outbound",
       type,
       content,
+      mediaId: mediaId || null,
       externalId: result.externalId,
       status: result.success ? "sent" : "failed",
       senderId,

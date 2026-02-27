@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { Serialized, Message, MessageType } from "@tercela/shared";
 import { listMessages, sendOutboundMessage } from "../services/message";
+import { createMediaRecord } from "../services/media";
 import { getStorageConfig, uploadMedia } from "../services/storage";
 import { success, successWithMeta, error } from "../utils/response";
 import { wrapSuccess, wrapPaginated, ErrorResponseSchema } from "../utils/openapi-schemas";
@@ -13,12 +14,24 @@ const IdParam = z.object({
   id: z.string().openapi({ param: { name: "id", in: "path" }, description: "Conversation ID" }),
 });
 
+const MediaSchema = z.object({
+  id: z.string(),
+  s3Key: z.string(),
+  mimeType: z.string(),
+  filename: z.string().nullable(),
+  size: z.number().nullable(),
+  uploadedBy: z.string().nullable(),
+  createdAt: z.string(),
+});
+
 const MessageSchema = z.object({
   id: z.string(),
   conversationId: z.string(),
   direction: z.enum(["inbound", "outbound"]),
   type: z.string(),
   content: z.string(),
+  mediaId: z.string().nullable(),
+  media: MediaSchema.nullable().optional(),
   externalId: z.string().nullable(),
   status: z.string(),
   senderId: z.string().nullable(),
@@ -188,23 +201,27 @@ messagesRouter.openapi(
     const buffer = Buffer.from(await file.arrayBuffer());
     const fullKey = await uploadMedia(buffer, s3Key, mimeType);
 
-    const content = JSON.stringify({
-      url: `/v1/media/${fullKey}`,
+    const mediaRecord = await createMediaRecord({
+      s3Key: fullKey,
       mimeType,
-      filename: file.name || undefined,
-      caption,
+      filename: file.name || null,
       size: buffer.length,
+      uploadedBy: senderId,
     });
 
-    console.log("[messages] Upload media:", { conversationId, type, filename: file.name, size: buffer.length });
+    // Content is caption-only (or empty)
+    const content = caption || "";
 
-    const msg = await sendOutboundMessage(conversationId, content, senderId, type);
+    console.log("[messages] Upload media:", { conversationId, type, filename: file.name, size: buffer.length, mediaId: mediaRecord.id });
+
+    const msg = await sendOutboundMessage(conversationId, content, senderId, type, mediaRecord.id);
+    const msgWithMedia = { ...msg, media: mediaRecord };
 
     const server = globalThis.__bunServer;
     if (server) {
       server.publish(
         `conversation:${conversationId}`,
-        JSON.stringify({ type: "message:new", payload: msg }),
+        JSON.stringify({ type: "message:new", payload: msgWithMedia }),
       );
       server.publish(
         "conversations",
@@ -215,7 +232,7 @@ messagesRouter.openapi(
       );
     }
 
-    return success(c, msg as unknown as MessageResponse, 201);
+    return success(c, msgWithMedia as unknown as MessageResponse, 201);
   },
 );
 

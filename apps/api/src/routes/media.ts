@@ -1,6 +1,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { verify } from "hono/jwt";
 import { getMediaStream } from "../services/storage";
+import { getMediaById } from "../services/media";
 import { env } from "../env";
 
 const mediaRouter = new OpenAPIHono();
@@ -24,7 +25,31 @@ mediaRouter.use("*", async (c, next) => {
   return next();
 });
 
-// GET /v1/media/* — stream from S3
+// GET /v1/media/:id — resolve media record and stream from S3
+mediaRouter.get("/:id", async (c) => {
+  const id = c.req.param("id");
+  if (!id) return c.text("Not found", 404);
+
+  try {
+    const record = await getMediaById(id);
+    if (!record) return c.text("Not found", 404);
+
+    const { stream, contentType, contentLength } = await getMediaStream(record.s3Key);
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": contentType,
+        ...(contentLength ? { "Content-Length": String(contentLength) } : {}),
+        "Cache-Control": "private, max-age=86400",
+      },
+    });
+  } catch (err) {
+    console.error("[media] Failed to stream:", id, err);
+    return c.text("Not found", 404);
+  }
+});
+
+// GET /v1/media/* — legacy fallback: stream by raw S3 path (backwards compat)
 mediaRouter.get("/*", async (c) => {
   const path = c.req.path.replace("/v1/media/", "");
   if (!path) return c.text("Not found", 404);
@@ -40,7 +65,7 @@ mediaRouter.get("/*", async (c) => {
       },
     });
   } catch (err) {
-    console.error("[media] Failed to stream:", path, err);
+    console.error("[media] Failed to stream (legacy):", path, err);
     return c.text("Not found", 404);
   }
 });
