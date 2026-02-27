@@ -1,4 +1,4 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { db } from "../db";
 import { contacts } from "../db/schema";
 import type { ChannelType } from "@tercela/shared";
@@ -9,6 +9,11 @@ export async function findOrCreateContact(data: {
   name?: string;
   phone?: string;
 }) {
+  // Only update name/phone if a non-empty value is provided (prevent null overwrite)
+  const updateSet: Record<string, unknown> = { updatedAt: new Date() };
+  if (data.name) updateSet.name = data.name;
+  if (data.phone) updateSet.phone = data.phone;
+
   const [contact] = await db
     .insert(contacts)
     .values({
@@ -19,11 +24,7 @@ export async function findOrCreateContact(data: {
     })
     .onConflictDoUpdate({
       target: [contacts.externalId, contacts.channelType],
-      set: {
-        name: data.name ?? undefined,
-        phone: data.phone ?? undefined,
-        updatedAt: new Date(),
-      },
+      set: updateSet,
     })
     .returning();
 
@@ -79,5 +80,10 @@ export async function updateContact(id: string, data: { name?: string; phone?: s
     .set({ ...data, updatedAt: new Date() })
     .where(eq(contacts.id, id))
     .returning();
+  return contact ?? null;
+}
+
+export async function deleteContact(id: string) {
+  const [contact] = await db.delete(contacts).where(eq(contacts.id, id)).returning();
   return contact ?? null;
 }

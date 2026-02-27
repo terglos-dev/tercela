@@ -1,4 +1,4 @@
-import { integer, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { index, integer, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { generateId } from "@tercela/shared";
 import { users } from "./users";
 import { storageSchema } from "./schemas";
@@ -11,4 +11,6 @@ export const media = storageSchema.table("media", {
   size: integer("size"),
   uploadedBy: text("uploaded_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => [
+  index("media_s3_key_idx").on(table.s3Key),
+]);

@@ -3,6 +3,7 @@ import { sign } from "hono/jwt";
 import { db } from "../db";
 import { users } from "../db/schema";
 import { env } from "../env";
+import { ValidationError } from "../utils/errors";
 
 export async function login(email: string, password: string) {
   const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
@@ -36,6 +37,9 @@ export async function createUser(data: {
   password: string;
   role: string;
 }) {
+  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, data.email)).limit(1);
+  if (existing) throw new ValidationError("A user with this email already exists");
+
   const passwordHash = await Bun.password.hash(data.password);
   const [user] = await db
     .insert(users)

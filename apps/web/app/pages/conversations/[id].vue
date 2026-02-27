@@ -91,6 +91,12 @@
               <UIcon name="i-lucide-loader-2" class="animate-spin size-5 text-[var(--ui-text-muted)]" />
             </div>
 
+            <div v-else-if="messagesError" class="flex flex-col items-center justify-center h-full gap-3 text-[var(--ui-text-muted)]">
+              <UIcon name="i-lucide-alert-circle" class="size-10 text-red-400" />
+              <span class="text-sm">{{ messagesError }}</span>
+              <UButton size="sm" variant="outline" icon="i-lucide-refresh-cw" :label="$t('chat.retry')" @click="retryFetchMessages" />
+            </div>
+
             <div v-else-if="messages.length === 0" class="flex flex-col items-center justify-center h-full gap-2 text-[var(--ui-text-muted)]">
               <UIcon name="i-lucide-message-circle" class="size-10" />
               <span class="text-sm">{{ $t("chat.noMessages") }}</span>
@@ -261,6 +267,7 @@ const toast = useToast();
 const newMessage = ref("");
 const sending = ref(false);
 const uploading = ref(false);
+const messagesError = ref<string | null>(null);
 const messagesContainer = ref<HTMLElement>();
 const fileInput = ref<HTMLInputElement>();
 
@@ -390,9 +397,25 @@ async function handleScroll() {
   });
 }
 
-watch(conversationId, (id) => {
+async function retryFetchMessages() {
+  messagesError.value = null;
+  try {
+    await fetchMessages(conversationId.value);
+    scrollToBottom();
+  } catch (e) {
+    messagesError.value = e instanceof Error ? e.message : t("chat.loadFailed");
+  }
+}
+
+watch(conversationId, async (id) => {
   if (id) {
-    fetchMessages(id);
+    messagesError.value = null;
+    try {
+      await fetchMessages(id);
+      scrollToBottom();
+    } catch (e) {
+      messagesError.value = e instanceof Error ? e.message : t("chat.loadFailed");
+    }
     subscribe(`conversation:${id}`);
   }
 }, { immediate: true });

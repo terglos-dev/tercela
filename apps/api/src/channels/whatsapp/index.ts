@@ -1,5 +1,6 @@
 import type { ChannelAdapter, IncomingMessage, OutgoingMessage, SendResult } from "../types";
 import type { WhatsAppChannelConfig, MessageType } from "@tercela/shared";
+import { logger } from "../../utils/logger";
 
 export async function downloadWhatsAppMedia(
   mediaId: string,
@@ -44,7 +45,7 @@ export const whatsappAdapter: ChannelAdapter = {
       body[message.type] = { link: message.content };
     }
 
-    console.log("[WA adapter] Sending to Meta API:", { to: message.to, type: message.type, phoneNumberId });
+    logger.info("wa-adapter", "Sending to Meta API", { to: message.to, type: message.type, phoneNumberId });
 
     const res = await fetch(
       `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`,
@@ -61,9 +62,9 @@ export const whatsappAdapter: ChannelAdapter = {
     const data = (await res.json()) as { messages?: { id: string }[]; error?: { message: string; code: number } };
 
     if (!res.ok) {
-      console.error("[WA adapter] Meta API error:", res.status, data.error ?? data);
+      logger.error("wa-adapter", "Meta API error", { status: res.status, error: data.error ?? data });
     } else {
-      console.log("[WA adapter] Meta API success, externalId:", data.messages?.[0]?.id);
+      logger.info("wa-adapter", "Meta API success", { externalId: data.messages?.[0]?.id });
     }
 
     return {
@@ -149,7 +150,8 @@ export const whatsappAdapter: ChannelAdapter = {
 
   async validateWebhook(rawBody: string, signature: string | null, config: Record<string, unknown>): Promise<boolean> {
     const appSecret = config.appSecret as string | undefined;
-    if (!appSecret || !signature) return true;
+    if (!appSecret) return true; // No secret configured — skip verification
+    if (!signature) return false; // Secret is set but no signature provided — reject
     const expected = signature.replace("sha256=", "");
     const key = await crypto.subtle.importKey(
       "raw",

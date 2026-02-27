@@ -3,6 +3,7 @@ import { verify } from "hono/jwt";
 import { getMediaStream } from "../services/storage";
 import { getMediaById } from "../services/media";
 import { env } from "../env";
+import { logger } from "../utils/logger";
 
 const mediaRouter = new OpenAPIHono();
 
@@ -44,7 +45,7 @@ mediaRouter.get("/:id", async (c) => {
       },
     });
   } catch (err) {
-    console.error("[media] Failed to stream:", id, err);
+    logger.error("media", "Failed to stream", { id, error: err instanceof Error ? err.message : String(err) });
     return c.text("Not found", 404);
   }
 });
@@ -65,7 +66,7 @@ mediaRouter.get("/*", async (c) => {
       },
     });
   } catch (err) {
-    console.error("[media] Failed to stream (legacy):", path, err);
+    logger.error("media", "Failed to stream (legacy)", { path, error: err instanceof Error ? err.message : String(err) });
     return c.text("Not found", 404);
   }
 });

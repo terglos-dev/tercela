@@ -14,6 +14,7 @@ const STATUS_ORDER: Record<string, number> = {
   sent: 1,
   delivered: 2,
   read: 3,
+  failed: -1,
 };
 
 export async function listMessages(
@@ -160,6 +161,12 @@ export async function updateMessageStatus(externalId: string, newStatus: Message
     .limit(1);
 
   if (!msg) return null;
+
+  // Reject unknown statuses
+  if (!(newStatus in STATUS_ORDER)) {
+    logger.warn("message", "Unknown status ignored", { externalId, status: newStatus });
+    return null;
+  }
 
   // "failed" is terminal — always accept it
   if (newStatus !== "failed") {
