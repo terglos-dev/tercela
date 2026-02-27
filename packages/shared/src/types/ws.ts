@@ -2,6 +2,7 @@ export type WsEventType =
   | "message:new"
   | "message:status"
   | "conversation:updated"
+  | "unread:updated"
   | "typing:start"
   | "typing:stop";
 

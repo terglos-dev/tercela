@@ -1,6 +1,6 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { db } from "../db";
-import { conversations, contacts, channels, users, messages } from "../db/schema";
+import { conversations, contacts, channels, users, messages, conversationReads } from "../db/schema";
 import { ValidationError } from "../utils/errors";
 
 export async function findOrCreateConversation(contactId: string, channelId: string) {
@@ -42,12 +42,27 @@ const conversationSelect = {
   },
 };
 
-export async function listConversations(opts: { limit?: number; offset?: number } = {}) {
+export async function listConversations(opts: { limit?: number; offset?: number; userId?: string } = {}) {
   const limit = Math.min(Math.max(opts.limit ?? 50, 1), 100);
   const offset = opts.offset ?? 0;
 
+  const unreadCountExpr = opts.userId
+    ? sql<number>`(
+        SELECT count(*)::int FROM ${messages}
+        WHERE ${messages.conversationId} = ${conversations.id}
+          AND ${messages.direction} = 'inbound'
+          AND ${messages.createdAt} > coalesce(
+            (SELECT ${conversationReads.lastReadAt}
+             FROM ${conversationReads}
+             WHERE ${conversationReads.conversationId} = ${conversations.id}
+               AND ${conversationReads.userId} = ${opts.userId}),
+            '1970-01-01'::timestamp
+          )
+      )`.as("unread_count")
+    : sql<number>`0`.as("unread_count");
+
   const result = await db
-    .select(conversationSelect)
+    .select({ ...conversationSelect, unreadCount: unreadCountExpr })
     .from(conversations)
     .leftJoin(contacts, eq(conversations.contactId, contacts.id))
     .leftJoin(channels, eq(conversations.channelId, channels.id))
@@ -105,4 +120,16 @@ export async function updateConversation(id: string, data: { assignedTo?: string
     .where(eq(conversations.id, id))
     .returning();
   return conv ?? null;
+}
+
+export async function markConversationRead(conversationId: string, userId: string) {
+  const [row] = await db
+    .insert(conversationReads)
+    .values({ conversationId, userId, lastReadAt: new Date() })
+    .onConflictDoUpdate({
+      target: [conversationReads.conversationId, conversationReads.userId],
+      set: { lastReadAt: new Date() },
+    })
+    .returning();
+  return row;
 }
