@@ -23,6 +23,7 @@ const MessageSchema = z.object({
   status: z.string(),
   senderId: z.string().nullable(),
   createdAt: z.string(),
+  updatedAt: z.string(),
 });
 
 // GET /:id/messages
@@ -123,67 +124,99 @@ messagesRouter.openapi(
 );
 
 // POST /:id/messages/upload — upload media file and send
-messagesRouter.post("/:id/messages/upload", async (c) => {
-  const conversationId = c.req.param("id");
-  const jwtPayload = c.get("jwtPayload");
-  const senderId = jwtPayload.sub as string;
+messagesRouter.openapi(
+  createRoute({
+    method: "post",
+    path: "/{id}/messages/upload",
+    tags: ["Messages"],
+    summary: "Upload and send media",
+    description: "Upload a media file to S3 and send it as a message",
+    request: {
+      params: IdParam,
+      body: {
+        content: {
+          "multipart/form-data": {
+            schema: z.object({
+              file: z.any().openapi({ type: "string", format: "binary" }),
+              caption: z.string().optional(),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      201: {
+        description: "Media uploaded and message sent",
+        content: { "application/json": { schema: wrapSuccess(MessageSchema) } },
+      },
+      400: {
+        description: "Invalid input or storage not configured",
+        content: { "application/json": { schema: ErrorResponseSchema } },
+      },
+    },
+  }),
+  async (c) => {
+    const { id: conversationId } = c.req.valid("param");
+    const jwtPayload = c.get("jwtPayload");
+    const senderId = jwtPayload.sub as string;
 
-  const formData = await c.req.formData();
-  const file = formData.get("file") as File | null;
-  const caption = (formData.get("caption") as string) || undefined;
+    const formData = await c.req.formData();
+    const file = formData.get("file") as File | null;
+    const caption = (formData.get("caption") as string) || undefined;
 
-  if (!file) {
-    return error(c, "No file provided", 400);
-  }
+    if (!file) {
+      return error(c, "No file provided", 400);
+    }
 
-  const storageConfig = await getStorageConfig();
-  if (!storageConfig) {
-    return error(c, "Storage not configured", 400);
-  }
+    const storageConfig = await getStorageConfig();
+    if (!storageConfig) {
+      return error(c, "Storage not configured", 400);
+    }
 
-  const mimeType = file.type || "application/octet-stream";
-  const mimePrefix = mimeType.split("/")[0];
-  let type: MessageType = "document";
-  if (mimePrefix === "image") type = "image";
-  else if (mimePrefix === "audio") type = "audio";
-  else if (mimePrefix === "video") type = "video";
+    const mimeType = file.type || "application/octet-stream";
+    const mimePrefix = mimeType.split("/")[0];
+    let type: MessageType = "document";
+    if (mimePrefix === "image") type = "image";
+    else if (mimePrefix === "audio") type = "audio";
+    else if (mimePrefix === "video") type = "video";
 
-  const ext = file.name?.split(".").pop() || mimeType.split("/")[1]?.split(";")[0] || "bin";
-  const now = new Date();
-  const datePath = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
-  const s3Key = `media/${datePath}/${crypto.randomUUID()}.${ext}`;
+    const ext = file.name?.split(".").pop() || mimeType.split("/")[1]?.split(";")[0] || "bin";
+    const now = new Date();
+    const datePath = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
+    const s3Key = `media/${datePath}/${crypto.randomUUID()}.${ext}`;
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const fullKey = await uploadMedia(buffer, s3Key, mimeType);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const fullKey = await uploadMedia(buffer, s3Key, mimeType);
 
-  const content = JSON.stringify({
-    url: `/v1/media/${fullKey}`,
-    mimeType,
-    filename: file.name || undefined,
-    caption,
-    size: buffer.length,
-  });
+    const content = JSON.stringify({
+      url: `/v1/media/${fullKey}`,
+      mimeType,
+      filename: file.name || undefined,
+      caption,
+      size: buffer.length,
+    });
 
-  console.log("[messages] Upload media:", { conversationId, type, filename: file.name, size: buffer.length });
+    console.log("[messages] Upload media:", { conversationId, type, filename: file.name, size: buffer.length });
 
-  const msg = await sendOutboundMessage(conversationId, content, senderId, type);
+    const msg = await sendOutboundMessage(conversationId, content, senderId, type);
 
-  const server = globalThis.__bunServer;
-  if (server) {
-    server.publish(
-      `conversation:${conversationId}`,
-      JSON.stringify({ type: "message:new", payload: msg }),
-    );
-    server.publish(
-      "conversations",
-      JSON.stringify({
-        type: "conversation:updated",
-        payload: { conversationId, lastMessageAt: new Date() },
-      }),
-    );
-  }
+    const server = globalThis.__bunServer;
+    if (server) {
+      server.publish(
+        `conversation:${conversationId}`,
+        JSON.stringify({ type: "message:new", payload: msg }),
+      );
+      server.publish(
+        "conversations",
+        JSON.stringify({
+          type: "conversation:updated",
+          payload: { conversationId, lastMessageAt: new Date() },
+        }),
+      );
+    }
 
-  return success(c, msg as unknown as MessageResponse, 201);
-});
+    return success(c, msg as unknown as MessageResponse, 201);
+  },
+);
 
 export { messagesRouter };

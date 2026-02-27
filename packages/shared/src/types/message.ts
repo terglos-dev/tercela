@@ -13,6 +13,7 @@ export interface Message {
   status: MessageStatus;
   senderId: string | null;
   createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface SendMessageInput {

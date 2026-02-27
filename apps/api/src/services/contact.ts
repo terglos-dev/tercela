@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { db } from "../db";
 import { contacts } from "../db/schema";
 import type { ChannelType } from "@tercela/shared";
@@ -9,17 +9,6 @@ export async function findOrCreateContact(data: {
   name?: string;
   phone?: string;
 }) {
-  const [existing] = await db
-    .select()
-    .from(contacts)
-    .where(and(
-      eq(contacts.externalId, data.externalId),
-      eq(contacts.channelType, data.channelType),
-    ))
-    .limit(1);
-
-  if (existing) return existing;
-
   const [contact] = await db
     .insert(contacts)
     .values({
@@ -28,13 +17,55 @@ export async function findOrCreateContact(data: {
       name: data.name ?? null,
       phone: data.phone ?? null,
     })
+    .onConflictDoUpdate({
+      target: [contacts.externalId, contacts.channelType],
+      set: {
+        name: data.name ?? undefined,
+        phone: data.phone ?? undefined,
+        updatedAt: new Date(),
+      },
+    })
     .returning();
 
   return contact;
 }
 
-export async function listContacts() {
-  return db.select().from(contacts).orderBy(contacts.createdAt);
+export async function createContact(data: {
+  externalId: string;
+  channelType: string;
+  name?: string | null;
+  phone?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  const [contact] = await db
+    .insert(contacts)
+    .values({
+      externalId: data.externalId,
+      channelType: data.channelType,
+      name: data.name ?? null,
+      phone: data.phone ?? null,
+      metadata: data.metadata ?? {},
+    })
+    .returning();
+
+  return contact;
+}
+
+export async function listContacts(opts: { limit?: number; offset?: number } = {}) {
+  const limit = Math.min(Math.max(opts.limit ?? 50, 1), 100);
+  const offset = opts.offset ?? 0;
+
+  const result = await db
+    .select()
+    .from(contacts)
+    .orderBy(desc(contacts.createdAt))
+    .limit(limit + 1)
+    .offset(offset);
+
+  const hasMore = result.length > limit;
+  if (hasMore) result.pop();
+
+  return { data: result, hasMore, offset, limit };
 }
 
 export async function getContact(id: string) {
