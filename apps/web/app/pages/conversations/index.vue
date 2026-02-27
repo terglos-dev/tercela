@@ -50,7 +50,7 @@
               <span class="text-sm">{{ $t("conversations.empty") }}</span>
             </div>
 
-            <div v-else class="flex-1 overflow-y-auto p-1.5 space-y-0.5">
+            <div v-else ref="convListEl" class="flex-1 overflow-y-auto p-1.5 space-y-0.5" @scroll="handleConvScroll">
               <NuxtLink
                 v-for="conv in conversations"
                 :key="conv.id"
@@ -70,6 +70,9 @@
                   </div>
                 </div>
               </NuxtLink>
+              <div v-if="loadingMore" class="flex items-center justify-center py-3">
+                <UIcon name="i-lucide-loader-2" class="animate-spin size-4 text-[var(--ui-text-muted)]" />
+              </div>
             </div>
           </template>
         </div>
@@ -90,14 +93,23 @@ import { timeAgo } from "~/utils/time";
 import { phoneWithFlag } from "~/utils/phone";
 
 const { locale } = useI18n();
-const { conversations, loading, fetchConversations } = useConversations();
+const { conversations, loading, loadingMore, hasMore, fetchConversations, loadMore } = useConversations();
 const { on, subscribe } = useWebSocket();
 const panelCollapsed = useCookie<boolean>("conv_panel_collapsed", { default: () => false });
+const convListEl = ref<HTMLElement>();
 
 function statusColor(status?: string) {
   if (status === "open") return "success" as const;
   if (status === "pending") return "warning" as const;
   return "neutral" as const;
+}
+
+function handleConvScroll() {
+  const el = convListEl.value;
+  if (!el || !hasMore.value || loadingMore.value) return;
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
+    loadMore();
+  }
 }
 
 onMounted(() => {

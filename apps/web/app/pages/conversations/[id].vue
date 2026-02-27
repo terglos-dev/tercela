@@ -34,7 +34,7 @@
             />
           </div>
 
-          <div class="flex-1 overflow-y-auto p-1.5 space-y-0.5">
+          <div ref="convListEl" class="flex-1 overflow-y-auto p-1.5 space-y-0.5" @scroll="handleConvScroll">
             <!-- Collapsed: only avatars -->
             <template v-if="panelCollapsed">
               <NuxtLink
@@ -45,6 +45,7 @@
                 :class="conv.id === conversationId
                   ? 'bg-[var(--ui-color-primary-50)] dark:bg-[var(--ui-color-primary-950)]'
                   : 'hover:bg-[var(--ui-bg-elevated)]'"
+                @click="conv.id === conversationId && scrollToBottom()"
               >
                 <div v-if="conv.id === conversationId" class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[var(--ui-color-primary-500)]" />
                 <UAvatar :alt="conv.contact?.name || '?'" size="sm" :color="avatarColor(conv.contact?.name || conv.id)" />
@@ -61,6 +62,7 @@
                 :class="conv.id === conversationId
                   ? 'bg-[var(--ui-color-primary-50)] dark:bg-[var(--ui-color-primary-950)]'
                   : 'hover:bg-[var(--ui-bg-elevated)]'"
+                @click="conv.id === conversationId && scrollToBottom()"
               >
                 <div v-if="conv.id === conversationId" class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-[var(--ui-color-primary-500)]" />
                 <UAvatar :alt="conv.contact?.name || '?'" size="md" :color="avatarColor(conv.contact?.name || conv.id)" />
@@ -77,6 +79,9 @@
                 </div>
               </NuxtLink>
             </template>
+            <div v-if="convLoadingMore" class="flex items-center justify-center py-3">
+              <UIcon name="i-lucide-loader-2" class="animate-spin size-4 text-[var(--ui-text-muted)]" />
+            </div>
           </div>
         </div>
 
@@ -257,7 +262,8 @@ const { t, locale } = useI18n();
 const conversationId = computed(() => route.params.id as string);
 const token = useCookie("auth_token");
 
-const { conversations, fetchConversations, updateConversation } = useConversations();
+const { conversations, loadingMore: convLoadingMore, hasMore: convHasMore, fetchConversations, loadMore: loadMoreConversations, updateConversation } = useConversations();
+const convListEl = ref<HTMLElement>();
 const panelCollapsed = useCookie<boolean>("conv_panel_collapsed", { default: () => false });
 const { messages, loading: messagesLoading, loadingMore, hasMore, fetchMessages, loadMore, sendMessage } = useMessages();
 const { uploadAndSendMedia } = useMediaUpload();
@@ -336,13 +342,21 @@ function statusColor(status?: string) {
   return "neutral" as const;
 }
 
+function handleConvScroll() {
+  const el = convListEl.value;
+  if (!el || !convHasMore.value || convLoadingMore.value) return;
+  if (el.scrollTop + el.clientHeight >= el.scrollHeight - 100) {
+    loadMoreConversations();
+  }
+}
+
 async function handleSend() {
   if (!newMessage.value.trim()) return;
   sending.value = true;
   try {
     await sendMessage(conversationId.value, newMessage.value);
     newMessage.value = "";
-    scrollToBottom();
+    scrollToBottom(true);
   } catch {
     toast.add({ title: t("chat.sendFailed"), color: "error", icon: "i-lucide-alert-circle" });
   } finally {
@@ -363,7 +377,7 @@ async function handleFileSelect(event: Event) {
   uploading.value = true;
   try {
     await uploadAndSendMedia(conversationId.value, file);
-    scrollToBottom();
+    scrollToBottom(true);
   } catch {
     toast.add({ title: t("chat.uploadFailed"), color: "error", icon: "i-lucide-alert-circle" });
   } finally {
@@ -376,12 +390,21 @@ async function handleStatusChange(status: string) {
   toast.add({ title: t("chat.statusChanged", { status }), icon: "i-lucide-check", color: "success" });
 }
 
-function scrollToBottom() {
+function scrollToBottom(smooth = false) {
   nextTick(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    const el = messagesContainer.value;
+    if (!el) return;
+    if (smooth) {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    } else {
+      el.scrollTop = el.scrollHeight;
     }
   });
+  // Second pass after images/media may have loaded and changed layout height
+  setTimeout(() => {
+    const el = messagesContainer.value;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, 150);
 }
 
 async function handleScroll() {
@@ -426,7 +449,7 @@ onMounted(() => {
     const msg = event.payload as Serialized<Message>;
     if (msg.conversationId === conversationId.value && !messages.value.some((m) => m.id === msg.id)) {
       messages.value.push(msg);
-      scrollToBottom();
+      scrollToBottom(true);
     }
   });
   on("message:status", (event) => {
