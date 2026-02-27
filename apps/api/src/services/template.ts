@@ -207,8 +207,8 @@ export async function updateTemplate(
 
   if (!template) throw new NotFoundError("Template");
 
-  if (template.status !== "PENDING" && template.status !== "REJECTED") {
-    throw new ValidationError("Only PENDING or REJECTED templates can be edited");
+  if (template.status === "IN_APPEAL") {
+    throw new ValidationError("Templates under appeal cannot be edited");
   }
 
   if (!template.metaId) {

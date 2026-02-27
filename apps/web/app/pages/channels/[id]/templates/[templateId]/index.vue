@@ -12,17 +12,7 @@
         </template>
         <template #right>
           <div class="flex items-center gap-2">
-            <UTooltip v-if="!isEditable" :text="$t('templates.approvedCannotEdit')">
-              <UButton
-                :label="$t('templates.edit')"
-                icon="i-lucide-pencil"
-                color="neutral"
-                variant="soft"
-                disabled
-              />
-            </UTooltip>
             <UButton
-              v-else
               :label="$t('templates.edit')"
               icon="i-lucide-pencil"
               color="neutral"
@@ -145,10 +135,6 @@ const template = ref<WhatsAppTemplateItem | null>(null);
 const loading = ref(true);
 const deleteModalOpen = ref(false);
 const deleting = ref(false);
-
-const isEditable = computed(() => {
-  return template.value?.status === "PENDING" || template.value?.status === "REJECTED";
-});
 
 function statusColor(status: string): "success" | "warning" | "error" | "neutral" {
   switch (status) {
