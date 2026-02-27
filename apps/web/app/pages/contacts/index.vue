@@ -11,6 +11,12 @@
     <template #body>
       <div class="p-6">
         <UTable v-if="!loading && contacts.length > 0" :data="contacts" :columns="columns" sticky>
+          <template #phone-cell="{ row }">
+            <span v-if="row.original.phone" class="whitespace-nowrap">
+              {{ phoneWithFlag(row.original.phone) }}
+            </span>
+            <span v-else class="text-[var(--ui-text-dimmed)]">—</span>
+          </template>
           <template #channelType-cell="{ row }">
             <UBadge color="info" variant="subtle" size="xs" :icon="channelIcon(row.original.channelType)">
               {{ row.original.channelType }}
@@ -37,6 +43,7 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import type { Serialized, Contact } from "@tercela/shared";
+import { phoneWithFlag } from "~/utils/phone";
 
 const { t, locale } = useI18n();
 const api = useApi();
@@ -45,7 +52,7 @@ const loading = ref(true);
 
 const columns = computed<TableColumn<Serialized<Contact>>[]>(() => [
   { accessorKey: "name", header: t("contacts.name") },
-  { accessorKey: "phone", header: t("contacts.phone") },
+  { id: "phone", accessorKey: "phone", header: t("contacts.phone") },
   { accessorKey: "channelType", header: t("contacts.channel") },
   { accessorKey: "createdAt", header: t("contacts.createdAt") },
 ]);
