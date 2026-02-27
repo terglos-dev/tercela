@@ -1,6 +1,27 @@
+<div align="center">
+
 # Tercela
 
-Open-source omnichannel platform for customer communication. Connect channels like WhatsApp, manage conversations in real time, and organize contacts — all in a unified interface.
+**Open-source omnichannel platform for customer communication**
+
+Connect channels like WhatsApp, manage conversations in real time, and organize contacts — all in a unified interface.
+
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Bun](https://img.shields.io/badge/runtime-Bun-f9f1e1?logo=bun&logoColor=000)](https://bun.sh)
+[![Hono](https://img.shields.io/badge/api-Hono-E36002?logo=hono&logoColor=fff)](https://hono.dev)
+[![Nuxt](https://img.shields.io/badge/frontend-Nuxt_4-00DC82?logo=nuxt.js&logoColor=fff)](https://nuxt.com)
+[![PostgreSQL](https://img.shields.io/badge/database-PostgreSQL-4169E1?logo=postgresql&logoColor=fff)](https://www.postgresql.org)
+[![Drizzle ORM](https://img.shields.io/badge/orm-Drizzle-C5F74F?logo=drizzle&logoColor=000)](https://orm.drizzle.team)
+
+</div>
+
+<!--
+  Screenshots go here. Add images to .github/assets/ and reference them:
+
+  ![Inbox](.github/assets/inbox.png)
+  ![Channels](.github/assets/channels.png)
+  ![Templates](.github/assets/templates.png)
+-->
 
 ## Features
 
