@@ -16,10 +16,6 @@ Connect channels like WhatsApp, manage conversations in real time, and organize 
 </div>
 
 <div align="center">
-  <img src=".github/assets/login.png" alt="Tercela Login" width="480" />
-</div>
-
-<div align="center">
   <img src=".github/assets/chat.png" alt="Tercela Inbox" width="720" />
 </div>
 
