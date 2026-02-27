@@ -107,6 +107,16 @@
                 <p class="text-base font-mono text-sm">{{ whatsappConfig.wabaId }}</p>
               </div>
             </div>
+
+            <!-- Message Templates link -->
+            <UButton
+              :label="$t('templates.title')"
+              icon="i-lucide-file-text"
+              color="neutral"
+              variant="soft"
+              block
+              :to="`/channels/${channelId}/templates`"
+            />
           </template>
 
           <div class="flex justify-between">

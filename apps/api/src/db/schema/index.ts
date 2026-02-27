@@ -7,3 +7,4 @@ export { messages } from "./messages";
 export { conversationReads } from "./conversation-reads";
 export { media } from "./media";
 export { settings } from "./settings";
+export { templates } from "./templates";

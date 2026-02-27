@@ -7,7 +7,7 @@
     "dev:web": "bun run --filter @tercela/web dev",
     "dev": "bun run dev:api & bun run dev:web",
     "db:generate": "bun run --filter @tercela/api db:generate",
-    "db:push": "bun run --filter @tercela/api db:push",
+    "db:migrate": "bun run --filter @tercela/api db:migrate",
     "db:seed": "bun run --filter @tercela/api db:seed",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",

@@ -21,3 +21,37 @@ export interface WhatsAppChannelConfig {
   wabaId?: string;
   tokenExpiresAt?: string;
 }
+
+// WhatsApp Message Templates
+export type TemplateCategory = "MARKETING" | "UTILITY" | "AUTHENTICATION";
+export type TemplateStatus = "APPROVED" | "PENDING" | "REJECTED" | "PAUSED" | "DISABLED" | "IN_APPEAL";
+
+export interface TemplateComponent {
+  type: "HEADER" | "BODY" | "FOOTER" | "BUTTONS";
+  format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
+  text?: string;
+  buttons?: TemplateButton[];
+  example?: Record<string, unknown>;
+}
+
+export interface TemplateButton {
+  type: "QUICK_REPLY" | "URL" | "PHONE_NUMBER" | "COPY_CODE";
+  text: string;
+  url?: string;
+  phone_number?: string;
+  example?: string[];
+}
+
+export interface WhatsAppTemplate {
+  id: string;
+  channelId: string;
+  metaId: string | null;
+  name: string;
+  language: string;
+  category: TemplateCategory;
+  status: TemplateStatus;
+  components: TemplateComponent[];
+  createdAt: Date;
+  updatedAt: Date;
+  syncedAt: Date;
+}

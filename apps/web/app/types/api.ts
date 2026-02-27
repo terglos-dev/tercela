@@ -58,3 +58,17 @@ export interface SettingItem {
   value: Record<string, unknown>;
   updatedAt: string;
 }
+
+export interface WhatsAppTemplateItem {
+  id: string;
+  channelId: string;
+  metaId: string | null;
+  name: string;
+  language: string;
+  category: string;
+  status: string;
+  components: Record<string, unknown>[];
+  createdAt: string;
+  updatedAt: string;
+  syncedAt: string;
+}

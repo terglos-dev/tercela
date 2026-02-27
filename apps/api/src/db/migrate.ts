@@ -1,4 +1,7 @@
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
+import path from "path";
 
 async function ensureDatabase(databaseUrl: string) {
   const url = new URL(databaseUrl);
@@ -19,31 +22,8 @@ async function ensureDatabase(databaseUrl: string) {
   }
 }
 
-async function pushSchemaViaCli() {
-  console.log("[DB] Pushing schema...");
-
-  const proc = Bun.spawn(["bun", "run", "drizzle-kit", "push", "--force"], {
-    cwd: import.meta.dir.replace("/src/db", "").replace("\\src\\db", ""),
-    env: process.env,
-    stdout: "pipe",
-    stderr: "pipe",
-  });
-
-  const stdout = await new Response(proc.stdout).text();
-  const stderr = await new Response(proc.stderr).text();
-  const exitCode = await proc.exited;
-
-  if (stdout.trim()) console.log(stdout.trim());
-  if (exitCode !== 0) {
-    console.error("[DB] Push failed:", stderr);
-    throw new Error(`drizzle-kit push failed with exit code ${exitCode}`);
-  }
-
-  console.log("[DB] Schema push complete");
-}
-
 async function ensureSchemas(databaseUrl: string) {
-  const schemas = ["auth", "channels", "contacts", "inbox"];
+  const schemas = ["auth", "channels", "contacts", "inbox", "config", "storage"];
   const client = postgres(databaseUrl, { max: 1 });
 
   try {
@@ -60,8 +40,25 @@ async function ensureSchemas(databaseUrl: string) {
   }
 }
 
+async function runMigrations(databaseUrl: string) {
+  console.log("[DB] Running migrations...");
+
+  const client = postgres(databaseUrl, { max: 1, onnotice: () => {} });
+  const db = drizzle(client);
+
+  const migrationsFolder = path.join(
+    import.meta.dir.replace("/src/db", "").replace("\\src\\db", ""),
+    "drizzle",
+  );
+
+  await migrate(db, { migrationsFolder });
+  await client.end();
+
+  console.log("[DB] Migrations complete");
+}
+
 export async function autoMigrate(databaseUrl: string) {
   await ensureDatabase(databaseUrl);
   await ensureSchemas(databaseUrl);
-  await pushSchemaViaCli();
+  await runMigrations(databaseUrl);
 }
