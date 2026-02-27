@@ -60,11 +60,11 @@
                 <UAvatar :alt="conv.contact?.name || '?'" size="md" :color="avatarColor(conv.contact?.name || conv.id)" />
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center justify-between gap-2">
-                    <span class="font-medium text-sm truncate">{{ conv.contact?.name || conv.contact?.phone || $t("conversations.unknown") }}</span>
+                    <span class="font-medium text-sm truncate">{{ conv.contact?.name || (conv.contact?.phone ? phoneWithFlag(conv.contact.phone) : $t("conversations.unknown")) }}</span>
                     <span class="text-[10px] text-[var(--ui-text-dimmed)] shrink-0">{{ timeAgo(conv.lastMessageAt || conv.createdAt, locale) }}</span>
                   </div>
                   <div class="flex items-center justify-between gap-2 mt-1">
-                    <span v-if="conv.contact?.phone && conv.contact?.name" class="text-xs text-[var(--ui-text-dimmed)] truncate">{{ conv.contact.phone }}</span>
+                    <span v-if="conv.contact?.phone && conv.contact?.name" class="text-xs text-[var(--ui-text-dimmed)] truncate">{{ phoneWithFlag(conv.contact.phone) }}</span>
                     <span v-else class="text-xs text-[var(--ui-text-dimmed)] truncate">{{ conv.channel?.name || conv.channel?.type }}</span>
                     <UBadge :color="statusColor(conv.status)" variant="subtle" size="xs" class="shrink-0">{{ conv.status }}</UBadge>
                   </div>
@@ -87,6 +87,7 @@
 <script setup lang="ts">
 import { avatarColor } from "~/utils/avatar";
 import { timeAgo } from "~/utils/time";
+import { phoneWithFlag } from "~/utils/phone";
 
 const { locale } = useI18n();
 const { conversations, loading, fetchConversations } = useConversations();
