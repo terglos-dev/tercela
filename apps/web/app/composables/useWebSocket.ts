@@ -3,6 +3,8 @@ import type { WsEvent } from "@tercela/shared";
 type EventHandler = (event: WsEvent) => void;
 
 let ws: WebSocket | null = null;
+let reconnectDelay = 1000;
+const MAX_RECONNECT_DELAY = 30_000;
 const handlers = new Map<string, Set<EventHandler>>();
 
 export function useWebSocket() {
@@ -15,6 +17,10 @@ export function useWebSocket() {
     if (!token) return;
 
     ws = new WebSocket(`${config.public.wsUrl}?token=${token}`);
+
+    ws.onopen = () => {
+      reconnectDelay = 1000; // Reset on successful connection
+    };
 
     ws.onmessage = (event) => {
       try {
@@ -34,7 +40,8 @@ export function useWebSocket() {
     };
 
     ws.onclose = () => {
-      setTimeout(connect, 3000);
+      setTimeout(connect, reconnectDelay);
+      reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY);
     };
   }
 

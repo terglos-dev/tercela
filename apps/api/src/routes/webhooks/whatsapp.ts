@@ -11,6 +11,30 @@ import {
 } from "../../services/webhook";
 import { logger } from "../../utils/logger";
 
+const webhookPayloadSchema = z.object({
+  object: z.string(),
+  entry: z.array(
+    z.object({
+      id: z.string(),
+      changes: z.array(
+        z.object({
+          value: z.object({
+            messaging_product: z.string().optional(),
+            metadata: z.object({
+              display_phone_number: z.string().optional(),
+              phone_number_id: z.string().optional(),
+            }).optional(),
+            messages: z.array(z.record(z.string(), z.unknown())).optional(),
+            statuses: z.array(z.record(z.string(), z.unknown())).optional(),
+            contacts: z.array(z.record(z.string(), z.unknown())).optional(),
+          }).passthrough(),
+          field: z.string().optional(),
+        }),
+      ),
+    }),
+  ),
+});
+
 const whatsappWebhook = new OpenAPIHono();
 
 // Webhook verification (GET)
@@ -72,9 +96,22 @@ whatsappWebhook.openapi(
   async (c) => {
     const rawBody = await c.req.text();
     const signature = c.req.header("x-hub-signature-256") ?? null;
-    const body = JSON.parse(rawBody);
 
-    const phoneNumberId = body?.entry?.[0]?.changes?.[0]?.value?.metadata?.phone_number_id;
+    let body: z.infer<typeof webhookPayloadSchema>;
+    try {
+      const parsed = JSON.parse(rawBody);
+      const result = webhookPayloadSchema.safeParse(parsed);
+      if (!result.success) {
+        logger.warn("webhook", "Invalid payload structure", { errors: result.error.issues.map((i) => i.message) });
+        return c.json({ status: "invalid_payload" }, 200);
+      }
+      body = result.data;
+    } catch {
+      logger.warn("webhook", "Malformed JSON in webhook body");
+      return c.json({ status: "invalid_json" }, 200);
+    }
+
+    const phoneNumberId = body.entry[0]?.changes[0]?.value?.metadata?.phone_number_id;
     const channel = await findChannelByPhoneNumberId(phoneNumberId);
 
     if (!channel) {

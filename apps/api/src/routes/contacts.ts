@@ -1,6 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { Serialized, Contact } from "@tercela/shared";
-import { listContacts, getContact, updateContact, createContact } from "../services/contact";
+import { listContacts, getContact, updateContact, createContact, deleteContact } from "../services/contact";
 import { success, successWithMeta, error } from "../utils/response";
 import { wrapSuccess, wrapPaginated, ErrorResponseSchema } from "../utils/openapi-schemas";
 
@@ -156,6 +156,33 @@ contactsRouter.openapi(
     const { id } = c.req.valid("param");
     const data = c.req.valid("json");
     const contact = await updateContact(id, data);
+    if (!contact) return error(c, "Contact not found", 404);
+    return success(c, contact as unknown as ContactResponse, 200);
+  },
+);
+
+// DELETE /:id
+contactsRouter.openapi(
+  createRoute({
+    method: "delete",
+    path: "/{id}",
+    tags: ["Contacts"],
+    summary: "Delete contact",
+    request: { params: IdParam },
+    responses: {
+      200: {
+        description: "Contact deleted",
+        content: { "application/json": { schema: wrapSuccess(ContactSchema) } },
+      },
+      404: {
+        description: "Contact not found",
+        content: { "application/json": { schema: ErrorResponseSchema } },
+      },
+    },
+  }),
+  async (c) => {
+    const { id } = c.req.valid("param");
+    const contact = await deleteContact(id);
     if (!contact) return error(c, "Contact not found", 404);
     return success(c, contact as unknown as ContactResponse, 200);
   },

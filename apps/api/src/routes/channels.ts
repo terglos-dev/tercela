@@ -30,7 +30,7 @@ const ChannelSchema = z.object({
 });
 
 function maskConfig(config: Record<string, unknown>): Record<string, unknown> {
-  const sensitiveKeys = ["accessToken", "appSecret"];
+  const sensitiveKeys = ["accessToken", "appSecret", "apiKey", "secretKey", "webhookSecret"];
   const masked: Record<string, unknown> = { ...config };
   for (const key of sensitiveKeys) {
     const val = masked[key];

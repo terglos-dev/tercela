@@ -16,8 +16,10 @@ const SettingSchema = z.object({
   updatedAt: z.string(),
 });
 
+const ALLOWED_SETTINGS_KEYS = ["storage"] as const;
+
 const KeyParam = z.object({
-  key: z.string().openapi({ param: { name: "key", in: "path" }, example: "storage" }),
+  key: z.enum(ALLOWED_SETTINGS_KEYS).openapi({ param: { name: "key", in: "path" }, example: "storage" }),
 });
 
 function maskSettingValue(key: string, value: Record<string, unknown>): Record<string, unknown> {

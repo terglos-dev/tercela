@@ -104,7 +104,7 @@ export async function getMediaStream(key: string): Promise<{
   };
 }
 
-export async function getPresignedUrl(key: string, expiresIn = 3600): Promise<string> {
+export async function getPresignedUrl(key: string, expiresIn = 86400): Promise<string> {
   const config = await getStorageConfig();
   if (!config) throw new Error("Storage not configured");
 

@@ -6,6 +6,7 @@ import { createBunWebSocket } from "hono/bun";
 import { verify } from "hono/jwt";
 import { errorHandler } from "./middleware/error-handler";
 import { authMiddleware } from "./middleware/auth";
+import { rateLimit } from "./middleware/rate-limit";
 import { auth } from "./routes/auth";
 import { contactsRouter } from "./routes/contacts";
 import { conversationsRouter } from "./routes/conversations";
@@ -26,11 +27,16 @@ const app = new OpenAPIHono();
 
 // Global middleware
 if (process.env.DEBUG_HTTP) app.use("*", logger());
-app.use("*", cors({ origin: ["http://localhost:3000"], credentials: true }));
+app.use("*", cors({ origin: env.CORS_ORIGINS.split(",").map((o) => o.trim()), credentials: true }));
 app.onError(errorHandler);
 
 // Health check
 app.get("/health", (c) => success(c, { status: "ok" }, 200));
+
+// Rate limiting
+app.use("/v1/auth/*", rateLimit({ windowMs: 60_000, max: 10, prefix: "auth" }));
+app.use("/webhooks/*", rateLimit({ windowMs: 1_000, max: 50, prefix: "webhook" }));
+app.use("/v1/*", rateLimit({ windowMs: 60_000, max: 200, prefix: "api" }));
 
 // Public routes (no auth)
 app.route("/v1/auth", auth);

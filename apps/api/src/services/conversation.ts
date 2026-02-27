@@ -1,6 +1,7 @@
 import { eq, desc } from "drizzle-orm";
 import { db } from "../db";
 import { conversations, contacts, channels, users, messages } from "../db/schema";
+import { ValidationError } from "../utils/errors";
 
 export async function findOrCreateConversation(contactId: string, channelId: string) {
   return db.transaction(async (tx) => {
@@ -92,6 +93,12 @@ export async function getConversation(id: string) {
 }
 
 export async function updateConversation(id: string, data: { assignedTo?: string | null; status?: string }) {
+  // Validate assigned user exists
+  if (data.assignedTo) {
+    const [user] = await db.select({ id: users.id }).from(users).where(eq(users.id, data.assignedTo)).limit(1);
+    if (!user) throw new ValidationError("Assigned user does not exist");
+  }
+
   const [conv] = await db
     .update(conversations)
     .set({ ...data, updatedAt: new Date() })

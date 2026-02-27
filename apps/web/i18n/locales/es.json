@@ -131,5 +131,7 @@
 
   "chat.uploadFailed": "Error al subir archivo",
   "chat.attach": "Adjuntar archivo",
-  "chat.downloading": "Descargando..."
+  "chat.downloading": "Descargando...",
+  "chat.retry": "Reintentar",
+  "chat.loadFailed": "Error al cargar mensajes"
 }

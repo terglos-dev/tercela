@@ -9,6 +9,7 @@ import { success, successWithMeta, error } from "../utils/response";
 import { wrapSuccess, wrapPaginated, ErrorResponseSchema } from "../utils/openapi-schemas";
 
 type MessageResponse = Serialized<Message>;
+type JwtPayload = { sub: string; role: string };
 
 const messagesRouter = new OpenAPIHono();
 
@@ -109,12 +110,13 @@ messagesRouter.openapi(
   async (c) => {
     const { id } = c.req.valid("param");
     const data = c.req.valid("json");
-    const senderId = (c.get("jwtPayload") as { sub: string }).sub;
+    const senderId = (c.get("jwtPayload") as JwtPayload).sub;
 
     const msg = await sendOutboundMessage(id, data.content, senderId, data.type);
-    broadcastNewMessage(id, msg);
+    const msgWithMedia = { ...msg, media: null };
+    broadcastNewMessage(id, msgWithMedia);
 
-    return success(c, msg as unknown as MessageResponse, 201);
+    return success(c, msgWithMedia as unknown as MessageResponse, 201);
   },
 );
 
@@ -152,7 +154,7 @@ messagesRouter.openapi(
   }),
   async (c) => {
     const { id: conversationId } = c.req.valid("param");
-    const senderId = (c.get("jwtPayload") as { sub: string }).sub;
+    const senderId = (c.get("jwtPayload") as JwtPayload).sub;
 
     const formData = await c.req.formData();
     const file = formData.get("file") as File | null;
@@ -175,16 +177,26 @@ messagesRouter.openapi(
     const datePath = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")}`;
     const s3Key = `media/${datePath}/${crypto.randomUUID()}.${ext}`;
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const fullKey = await uploadMedia(buffer, s3Key, mimeType);
+    let fullKey: string;
+    let mediaRecord: Awaited<ReturnType<typeof createMediaRecord>>;
 
-    const mediaRecord = await createMediaRecord({
-      s3Key: fullKey,
-      mimeType,
-      filename: file.name || null,
-      size: buffer.length,
-      uploadedBy: senderId,
-    });
+    try {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      fullKey = await uploadMedia(buffer, s3Key, mimeType);
+
+      mediaRecord = await createMediaRecord({
+        s3Key: fullKey,
+        mimeType,
+        filename: file.name || null,
+        size: buffer.length,
+        uploadedBy: senderId,
+      });
+    } catch (err) {
+      logger.error("messages", "Media upload failed", {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return error(c, "Failed to upload media", 400);
+    }
 
     const content = caption || "";
     const msg = await sendOutboundMessage(conversationId, content, senderId, type, mediaRecord.id);

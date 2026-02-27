@@ -1,4 +1,4 @@
-import { text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { index, text, timestamp, varchar } from "drizzle-orm/pg-core";
 import { generateId } from "@tercela/shared";
 import { authSchema } from "./schemas";
 
@@ -10,4 +10,6 @@ export const users = authSchema.table("users", {
   role: varchar("role", { length: 20 }).notNull().default("agent"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => [
+  index("users_email_idx").on(table.email),
+]);

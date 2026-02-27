@@ -9,9 +9,10 @@ export default defineNuxtConfig({
 
   runtimeConfig: {
     public: {
-      apiBase: "http://localhost:3333",
-      wsUrl: "ws://localhost:3333/ws",
-      facebookAppId: "",
+      // Override via NUXT_PUBLIC_API_BASE and NUXT_PUBLIC_WS_URL env vars
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || "http://localhost:3333",
+      wsUrl: process.env.NUXT_PUBLIC_WS_URL || "ws://localhost:3333/ws",
+      facebookAppId: process.env.NUXT_PUBLIC_FACEBOOK_APP_ID || "",
     },
   },
 

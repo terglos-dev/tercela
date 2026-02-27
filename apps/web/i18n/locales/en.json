@@ -111,7 +111,7 @@
   "settings.createAgent": "Create agent",
   "settings.namePlaceholder": "Full name",
   "settings.emailPlaceholder": "email{'@'}company.com",
-  "settings.passwordPlaceholder": "Minimum 6 characters",
+  "settings.passwordPlaceholder": "Min 8 chars, upper + lower + number",
   "settings.agentCreated": "Agent created",
   "settings.createFailed": "Failed to create agent",
   "settings.storage": "Storage",
@@ -131,5 +131,7 @@
 
   "chat.uploadFailed": "Failed to upload file",
   "chat.attach": "Attach file",
-  "chat.downloading": "Downloading..."
+  "chat.downloading": "Downloading...",
+  "chat.retry": "Retry",
+  "chat.loadFailed": "Failed to load messages"
 }

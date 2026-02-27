@@ -131,5 +131,7 @@
 
   "chat.uploadFailed": "फ़ाइल अपलोड विफल",
   "chat.attach": "फ़ाइल संलग्न करें",
-  "chat.downloading": "डाउनलोड हो रहा है..."
+  "chat.downloading": "डाउनलोड हो रहा है...",
+  "chat.retry": "पुनः प्रयास करें",
+  "chat.loadFailed": "संदेश लोड करने में विफल"
 }

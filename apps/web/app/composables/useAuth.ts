@@ -2,7 +2,11 @@ import type { AuthResponse, User } from "@tercela/shared";
 
 export function useAuth() {
   const user = useState<User | null>("auth_user", () => null);
-  const token = useCookie("auth_token", { maxAge: 86400 });
+  const token = useCookie("auth_token", {
+    maxAge: 86400,
+    sameSite: "lax",
+    path: "/",
+  });
   const api = useApi();
 
   const isAuthenticated = computed(() => !!token.value);

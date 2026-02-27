@@ -131,5 +131,7 @@
 
   "chat.uploadFailed": "Gagal mengunggah file",
   "chat.attach": "Lampirkan file",
-  "chat.downloading": "Mengunduh..."
+  "chat.downloading": "Mengunduh...",
+  "chat.retry": "Coba lagi",
+  "chat.loadFailed": "Gagal memuat pesan"
 }

@@ -4,6 +4,7 @@ import { autoSeed } from "./db/seeders";
 import { db } from "./db";
 import { app, websocket } from "./app";
 import { refreshChannelTokens } from "./services/channel";
+import { logger } from "./utils/logger";
 
 declare global {
   var __bunServer: ReturnType<typeof Bun.serve> | undefined;
@@ -21,20 +22,29 @@ async function start() {
 
   globalThis.__bunServer = server;
 
-  console.log(`🚀 Tercela API running on http://localhost:${server.port}`);
+  logger.info("server", `Tercela API running on http://localhost:${server.port}`);
 
   // Refresh expiring WhatsApp tokens on boot, then daily
-  refreshChannelTokens().catch((err) =>
-    console.warn("[token-refresh] Boot check failed:", err),
-  );
-  setInterval(() => {
-    refreshChannelTokens().catch((err) =>
-      console.warn("[token-refresh] Scheduled check failed:", err),
-    );
-  }, 24 * 60 * 60 * 1000);
+  const TOKEN_REFRESH_INTERVAL = 24 * 60 * 60 * 1000;
+  let consecutiveFailures = 0;
+
+  async function runTokenRefresh(context: string) {
+    try {
+      await refreshChannelTokens();
+      consecutiveFailures = 0;
+    } catch (err) {
+      consecutiveFailures++;
+      logger.warn("token-refresh", `${context} failed (attempt ${consecutiveFailures})`, {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  runTokenRefresh("Boot check");
+  setInterval(() => runTokenRefresh("Scheduled check"), TOKEN_REFRESH_INTERVAL);
 }
 
 start().catch((err) => {
-  console.error("Failed to start server:", err);
+  logger.error("server", "Failed to start", { error: err instanceof Error ? err.message : String(err) });
   process.exit(1);
 });
