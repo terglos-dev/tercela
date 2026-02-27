@@ -20,6 +20,10 @@ export function useApi() {
     const body = await res.json().catch(() => null);
 
     if (!res.ok) {
+      if (res.status === 403 && body?.error?.message === "Account is blocked") {
+        token.value = null;
+        navigateTo("/login");
+      }
       throw new Error(body?.error?.message || "Request failed");
     }
 

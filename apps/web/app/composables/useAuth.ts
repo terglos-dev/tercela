@@ -24,5 +24,9 @@ export function useAuth() {
     navigateTo("/login");
   }
 
-  return { user, token, isAuthenticated, login, logout };
+  async function changePassword(currentPassword: string, newPassword: string) {
+    await api.post("/v1/users/me/password", { currentPassword, newPassword });
+  }
+
+  return { user, token, isAuthenticated, login, logout, changePassword };
 }
