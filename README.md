@@ -19,10 +19,9 @@ Connect channels like WhatsApp, manage conversations in real time, and organize 
   <img src=".github/assets/login.png" alt="Tercela Login" width="480" />
 </div>
 
-<!--
-  Add more screenshots to .github/assets/ and reference them:
-  ![Inbox](.github/assets/inbox.png)
--->
+<div align="center">
+  <img src=".github/assets/chat.png" alt="Tercela Inbox" width="720" />
+</div>
 
 ## Features
 
