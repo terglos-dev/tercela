@@ -86,75 +86,53 @@ export const whatsappAdapter: ChannelAdapter = {
 
     let type: MessageType = "text";
     let content = "";
+    let data: Record<string, unknown> | null = null;
 
     if (msg.type === "text") {
       type = "text";
       content = msg.text?.body ?? "";
     } else if (msg.type === "image") {
       type = "image";
-      content = JSON.stringify({
-        mediaId: msg.image?.id,
-        mimeType: msg.image?.mime_type,
-        caption: msg.image?.caption,
-      });
+      content = msg.image?.caption || "";
+      data = { mediaId: msg.image?.id, mimeType: msg.image?.mime_type };
     } else if (msg.type === "audio") {
       type = "audio";
-      content = JSON.stringify({
-        mediaId: msg.audio?.id,
-        mimeType: msg.audio?.mime_type,
-      });
+      data = { mediaId: msg.audio?.id, mimeType: msg.audio?.mime_type };
     } else if (msg.type === "video") {
       type = "video";
-      content = JSON.stringify({
-        mediaId: msg.video?.id,
-        mimeType: msg.video?.mime_type,
-        caption: msg.video?.caption,
-      });
+      content = msg.video?.caption || "";
+      data = { mediaId: msg.video?.id, mimeType: msg.video?.mime_type };
     } else if (msg.type === "document") {
       type = "document";
-      content = JSON.stringify({
-        mediaId: msg.document?.id,
-        mimeType: msg.document?.mime_type,
-        filename: msg.document?.filename,
-        caption: msg.document?.caption,
-      });
+      content = msg.document?.caption || "";
+      data = { mediaId: msg.document?.id, mimeType: msg.document?.mime_type, filename: msg.document?.filename };
     } else if (msg.type === "location") {
       type = "location";
-      content = JSON.stringify({
-        latitude: msg.location?.latitude,
-        longitude: msg.location?.longitude,
-      });
+      data = { latitude: msg.location?.latitude, longitude: msg.location?.longitude };
     } else if (msg.type === "sticker") {
       type = "sticker";
-      content = JSON.stringify({
-        mediaId: msg.sticker?.id,
-        mimeType: msg.sticker?.mime_type,
-      });
+      data = { mediaId: msg.sticker?.id, mimeType: msg.sticker?.mime_type };
     } else if (msg.type === "reaction") {
       type = "reaction";
-      content = JSON.stringify({
-        emoji: msg.reaction?.emoji,
-        message_id: msg.reaction?.message_id,
-      });
+      content = msg.reaction?.emoji ?? "";
+      data = { message_id: msg.reaction?.message_id };
     } else if (msg.type === "contacts") {
       type = "contacts";
-      content = JSON.stringify(msg.contacts ?? []);
+      data = { contacts: msg.contacts ?? [] };
     } else if (msg.type === "interactive") {
       type = "interactive";
       const reply = msg.interactive?.button_reply || msg.interactive?.list_reply;
-      content = JSON.stringify({
-        type: msg.interactive?.type,
-        ...(reply ?? {}),
-      });
+      content = reply?.title || reply?.id || "";
+      data = { type: msg.interactive?.type, ...(reply ?? {}) };
     } else if (msg.type === "button") {
       type = "button";
       content = msg.button?.text ?? "";
     } else if (msg.type === "order") {
       type = "order";
-      content = JSON.stringify(msg.order ?? {});
+      data = msg.order ?? {};
     } else {
       type = "unknown";
-      content = JSON.stringify({ originalType: msg.type });
+      data = { originalType: msg.type };
     }
 
     return {
@@ -164,12 +142,24 @@ export const whatsappAdapter: ChannelAdapter = {
       contactPhone: msg.from,
       type,
       content,
+      data,
       timestamp: new Date(Number(msg.timestamp) * 1000),
     };
   },
 
-  validateWebhook(_request: Request, _config: Record<string, unknown>): boolean {
-    // Signature validation is handled at the route level via middleware
-    return true;
+  async validateWebhook(rawBody: string, signature: string | null, config: Record<string, unknown>): Promise<boolean> {
+    const appSecret = config.appSecret as string | undefined;
+    if (!appSecret || !signature) return true;
+    const expected = signature.replace("sha256=", "");
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(appSecret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"],
+    );
+    const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
+    const hex = [...new Uint8Array(sig)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    return hex === expected;
   },
 };

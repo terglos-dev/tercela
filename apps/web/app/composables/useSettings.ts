@@ -2,8 +2,8 @@ import type { SettingItem, StorageConfig } from "~/types/api";
 
 export function useSettings() {
   const api = useApi();
-  const settings = ref<SettingItem[]>([]);
-  const loading = ref(false);
+  const settings = useState<SettingItem[]>("settings", () => []);
+  const loading = useState("settings_loading", () => false);
 
   async function fetchSettings() {
     loading.value = true;

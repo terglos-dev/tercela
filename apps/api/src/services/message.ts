@@ -2,7 +2,10 @@ import { eq, and, lt, desc } from "drizzle-orm";
 import { db } from "../db";
 import { messages, conversations, contacts, channels, media } from "../db/schema";
 import { getAdapter } from "../channels";
+import { getMediaById } from "./media";
 import { getPresignedUrl } from "./storage";
+import { logger } from "../utils/logger";
+import { NotFoundError } from "../utils/errors";
 import type { ChannelType, MessageType, MessageStatus } from "@tercela/shared";
 import type { IncomingMessage } from "../channels/types";
 
@@ -37,7 +40,6 @@ export async function listMessages(
   const hasMore = rows.length > limit;
   if (hasMore) rows.pop();
 
-  // Reverse to chronological order (oldest first)
   rows.reverse();
 
   const result = rows.map((row) => ({
@@ -60,6 +62,7 @@ export async function createInboundMessage(conversationId: string, incoming: Inc
       direction: "inbound",
       type: incoming.type,
       content: incoming.content,
+      data: incoming.data || null,
       mediaId: mediaId || null,
       externalId: incoming.externalId,
       status: "delivered",
@@ -74,13 +77,8 @@ export async function createInboundMessage(conversationId: string, incoming: Inc
   return msg;
 }
 
-export async function sendOutboundMessage(
-  conversationId: string,
-  content: string,
-  senderId: string,
-  type: MessageType = "text",
-  mediaId?: string,
-) {
+/** Resolve conversation context (contact + channel) for outbound messaging. */
+async function getConversationContext(conversationId: string) {
   const [row] = await db
     .select({
       convId: conversations.id,
@@ -94,25 +92,40 @@ export async function sendOutboundMessage(
     .where(eq(conversations.id, conversationId))
     .limit(1);
 
-  if (!row) throw new Error("Conversation, contact or channel not found");
+  if (!row) throw new NotFoundError("Conversation");
 
-  const contact = { externalId: row.contactExternalId };
-  const channel = { type: row.channelType, config: row.channelConfig };
+  return {
+    contactExternalId: row.contactExternalId,
+    channelType: row.channelType as ChannelType,
+    channelConfig: row.channelConfig as Record<string, unknown>,
+  };
+}
 
-  // For media types, resolve presigned URL from media record for the channel adapter
-  let adapterContent = content;
+/** Resolve presigned URL from media record for the channel adapter. */
+async function resolveAdapterContent(content: string, mediaId?: string): Promise<string> {
+  if (!mediaId) return content;
 
-  if (mediaId) {
-    const { getMediaById } = await import("./media");
-    const mediaRecord = await getMediaById(mediaId);
-    if (mediaRecord) {
-      adapterContent = await getPresignedUrl(mediaRecord.s3Key);
-    }
+  const mediaRecord = await getMediaById(mediaId);
+  if (mediaRecord) {
+    return getPresignedUrl(mediaRecord.s3Key);
   }
 
-  const adapter = getAdapter(channel.type as ChannelType);
-  const result = await adapter.sendMessage(channel.config as Record<string, unknown>, {
-    to: contact.externalId,
+  return content;
+}
+
+export async function sendOutboundMessage(
+  conversationId: string,
+  content: string,
+  senderId: string,
+  type: MessageType = "text",
+  mediaId?: string,
+) {
+  const ctx = await getConversationContext(conversationId);
+  const adapterContent = await resolveAdapterContent(content, mediaId);
+
+  const adapter = getAdapter(ctx.channelType);
+  const result = await adapter.sendMessage(ctx.channelConfig, {
+    to: ctx.contactExternalId,
     type,
     content: adapterContent,
   });
@@ -140,29 +153,19 @@ export async function sendOutboundMessage(
 }
 
 export async function updateMessageStatus(externalId: string, newStatus: MessageStatus) {
-  console.log("[message service] updateMessageStatus:", { externalId, newStatus });
-
   const [msg] = await db
     .select()
     .from(messages)
     .where(eq(messages.externalId, externalId))
     .limit(1);
 
-  if (!msg) {
-    console.log("[message service] No message found for externalId:", externalId);
-    return null;
-  }
-
-  console.log("[message service] Found message:", { id: msg.id, currentStatus: msg.status, conversationId: msg.conversationId });
+  if (!msg) return null;
 
   // "failed" is terminal — always accept it
   if (newStatus !== "failed") {
     const currentRank = STATUS_ORDER[msg.status] ?? -1;
     const newRank = STATUS_ORDER[newStatus] ?? -1;
-    if (newRank <= currentRank) {
-      console.log("[message service] Skipping regression:", msg.status, "→", newStatus);
-      return null;
-    }
+    if (newRank <= currentRank) return null;
   }
 
   const [updated] = await db
@@ -171,6 +174,11 @@ export async function updateMessageStatus(externalId: string, newStatus: Message
     .where(eq(messages.id, msg.id))
     .returning();
 
-  console.log("[message service] Status updated:", msg.status, "→", updated.status);
+  logger.info("message", "Status updated", {
+    id: msg.id,
+    from: msg.status,
+    to: updated.status,
+  });
+
   return updated;
 }

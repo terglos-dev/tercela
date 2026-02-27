@@ -113,15 +113,15 @@
                   <div class="break-words">
                     <template v-if="msg.type === 'text'">{{ msg.content }}</template>
                     <template v-else-if="msg.type === 'reaction'">
-                      <span class="text-2xl">{{ parseReaction(msg.content) }}</span>
+                      <span class="text-2xl">{{ msg.content || parseReaction(msg.content) }}</span>
                     </template>
                     <template v-else-if="msg.type === 'interactive' || msg.type === 'button'">
-                      {{ parseInteractive(msg.content) }}
+                      {{ msg.content || parseInteractive(msg.content) }}
                     </template>
                     <template v-else-if="msg.type === 'location'">
                       <span class="flex items-center gap-1">
                         <UIcon name="i-lucide-map-pin" class="size-3.5 shrink-0" />
-                        {{ parseLocation(msg.content) }}
+                        {{ formatLocation(msg) }}
                       </span>
                     </template>
                     <template v-else-if="msg.type === 'image' && msgMediaUrl(msg)">
@@ -253,7 +253,8 @@ const token = useCookie("auth_token");
 
 const { conversations, fetchConversations, updateConversation } = useConversations();
 const panelCollapsed = useCookie<boolean>("conv_panel_collapsed", { default: () => false });
-const { messages, loading: messagesLoading, loadingMore, hasMore, fetchMessages, loadMore, sendMessage, uploadAndSendMedia } = useMessages();
+const { messages, loading: messagesLoading, loadingMore, hasMore, fetchMessages, loadMore, sendMessage } = useMessages();
+const { uploadAndSendMedia } = useMediaUpload();
 const { on, subscribe, unsubscribe } = useWebSocket();
 const toast = useToast();
 
@@ -301,19 +302,24 @@ function parseReaction(content: string): string {
 
 function parseInteractive(content: string): string {
   try {
-    const data = JSON.parse(content);
-    return data.title || data.id || content;
+    const d = JSON.parse(content);
+    return d.title || d.id || content;
   } catch {
     return content;
   }
 }
 
-function parseLocation(content: string): string {
+function formatLocation(msg: { data?: Record<string, unknown> | null; content: string }): string {
+  // New format: data has lat/lng
+  if (msg.data?.latitude && msg.data?.longitude) {
+    return `${msg.data.latitude}, ${msg.data.longitude}`;
+  }
+  // Legacy: JSON in content
   try {
-    const { latitude, longitude } = JSON.parse(content);
+    const { latitude, longitude } = JSON.parse(msg.content);
     return `${latitude}, ${longitude}`;
   } catch {
-    return content;
+    return msg.content;
   }
 }
 

@@ -3,6 +3,8 @@ import type { Serialized, Message, MessageType } from "@tercela/shared";
 import { listMessages, sendOutboundMessage } from "../services/message";
 import { createMediaRecord } from "../services/media";
 import { getStorageConfig, uploadMedia } from "../services/storage";
+import { broadcastNewMessage } from "../utils/broadcast";
+import { logger } from "../utils/logger";
 import { success, successWithMeta, error } from "../utils/response";
 import { wrapSuccess, wrapPaginated, ErrorResponseSchema } from "../utils/openapi-schemas";
 
@@ -30,6 +32,7 @@ const MessageSchema = z.object({
   direction: z.enum(["inbound", "outbound"]),
   type: z.string(),
   content: z.string(),
+  data: z.record(z.string(), z.unknown()).nullable().optional(),
   mediaId: z.string().nullable(),
   media: MediaSchema.nullable().optional(),
   externalId: z.string().nullable(),
@@ -106,31 +109,10 @@ messagesRouter.openapi(
   async (c) => {
     const { id } = c.req.valid("param");
     const data = c.req.valid("json");
-    const jwtPayload = c.get("jwtPayload");
-    const senderId = jwtPayload.sub as string;
-
-    console.log("[messages] Sending outbound:", { conversationId: id, type: data.type, contentLength: data.content.length, senderId });
+    const senderId = (c.get("jwtPayload") as { sub: string }).sub;
 
     const msg = await sendOutboundMessage(id, data.content, senderId, data.type);
-    console.log("[messages] Message saved:", { id: msg.id, externalId: msg.externalId, status: msg.status });
-
-    const server = globalThis.__bunServer;
-    if (server) {
-      server.publish(
-        `conversation:${id}`,
-        JSON.stringify({ type: "message:new", payload: msg }),
-      );
-      server.publish(
-        "conversations",
-        JSON.stringify({
-          type: "conversation:updated",
-          payload: { conversationId: id, lastMessageAt: new Date() },
-        }),
-      );
-      console.log("[messages] WS broadcast sent");
-    } else {
-      console.warn("[messages] No WS server — cannot broadcast");
-    }
+    broadcastNewMessage(id, msg);
 
     return success(c, msg as unknown as MessageResponse, 201);
   },
@@ -170,21 +152,16 @@ messagesRouter.openapi(
   }),
   async (c) => {
     const { id: conversationId } = c.req.valid("param");
-    const jwtPayload = c.get("jwtPayload");
-    const senderId = jwtPayload.sub as string;
+    const senderId = (c.get("jwtPayload") as { sub: string }).sub;
 
     const formData = await c.req.formData();
     const file = formData.get("file") as File | null;
     const caption = (formData.get("caption") as string) || undefined;
 
-    if (!file) {
-      return error(c, "No file provided", 400);
-    }
+    if (!file) return error(c, "No file provided", 400);
 
     const storageConfig = await getStorageConfig();
-    if (!storageConfig) {
-      return error(c, "Storage not configured", 400);
-    }
+    if (!storageConfig) return error(c, "Storage not configured", 400);
 
     const mimeType = file.type || "application/octet-stream";
     const mimePrefix = mimeType.split("/")[0];
@@ -209,28 +186,11 @@ messagesRouter.openapi(
       uploadedBy: senderId,
     });
 
-    // Content is caption-only (or empty)
     const content = caption || "";
-
-    console.log("[messages] Upload media:", { conversationId, type, filename: file.name, size: buffer.length, mediaId: mediaRecord.id });
-
     const msg = await sendOutboundMessage(conversationId, content, senderId, type, mediaRecord.id);
     const msgWithMedia = { ...msg, media: mediaRecord };
 
-    const server = globalThis.__bunServer;
-    if (server) {
-      server.publish(
-        `conversation:${conversationId}`,
-        JSON.stringify({ type: "message:new", payload: msgWithMedia }),
-      );
-      server.publish(
-        "conversations",
-        JSON.stringify({
-          type: "conversation:updated",
-          payload: { conversationId, lastMessageAt: new Date() },
-        }),
-      );
-    }
+    broadcastNewMessage(conversationId, msgWithMedia);
 
     return success(c, msgWithMedia as unknown as MessageResponse, 201);
   },

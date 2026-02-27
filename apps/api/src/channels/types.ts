@@ -7,6 +7,7 @@ export interface IncomingMessage {
   contactPhone?: string;
   type: MessageType;
   content: string;
+  data?: Record<string, unknown> | null;
   timestamp: Date;
 }
 
@@ -25,5 +26,5 @@ export interface ChannelAdapter {
   type: ChannelType;
   sendMessage(config: Record<string, unknown>, message: OutgoingMessage): Promise<SendResult>;
   parseIncoming(body: unknown): IncomingMessage | null;
-  validateWebhook(request: Request, config: Record<string, unknown>): boolean;
+  validateWebhook(rawBody: string, signature: string | null, config: Record<string, unknown>): Promise<boolean>;
 }
