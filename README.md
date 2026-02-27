@@ -6,11 +6,14 @@ Open-source omnichannel platform for customer communication. Connect channels li
 
 - **Omnichannel inbox** — Manage all conversations from a single dashboard
 - **WhatsApp integration** — Send and receive messages via WhatsApp Cloud API
+- **Message templates** — Create, view, edit and sync WhatsApp message templates with Meta
 - **Real-time updates** — WebSocket-powered live messaging
 - **Channel adapter pattern** — Extensible architecture to add new channels (Instagram, Webchat, etc.)
 - **Contact management** — Centralized contact database with metadata
 - **Agent assignment** — Route conversations to team members
+- **Media storage** — S3-compatible storage for images, audio, video and documents
 - **REST API with OpenAPI docs** — Interactive API reference via Scalar
+- **Automatic migrations** — Versioned database migrations applied on boot
 - **Docker-ready** — One command to run the entire stack
 
 ## Tech Stack
@@ -97,7 +100,8 @@ tercela/
 | `bun run dev` | Start API + Web in dev mode |
 | `bun run dev:api` | Start API only |
 | `bun run dev:web` | Start frontend only |
-| `bun run db:push` | Push schema to database |
+| `bun run db:generate` | Generate migration from schema changes |
+| `bun run db:migrate` | Apply pending migrations |
 | `bun run db:seed` | Seed database with initial data |
 | `bun run docker:up` | Start all services via Docker |
 | `bun run docker:down` | Stop Docker services |
@@ -113,9 +117,11 @@ Tables are organized into named PostgreSQL schemas:
 | Schema | Tables | Purpose |
 |---|---|---|
 | `auth` | users | Authentication & user management |
-| `channels` | channels | Communication channel configuration |
+| `channels` | channels, templates | Communication channels & WhatsApp templates |
 | `contacts` | contacts | Contact database |
-| `inbox` | conversations, messages | Conversation and message data |
+| `inbox` | conversations, messages, conversation_reads | Conversation and message data |
+| `config` | settings | Application settings |
+| `storage` | media | Media file references |
 
 ## Environment Variables
 
